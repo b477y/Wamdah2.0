@@ -12,28 +12,28 @@ interface JobData {
 
 type JobState =
   | {
-      status: "queued";
-      data: JobData;
-      cancel: () => void;
-    }
+    status: "queued";
+    data: JobData;
+    cancel: () => void;
+  }
   | {
-      status: "in-progress";
-      progress: number;
-      data: JobData;
-      cancel: () => void;
-    }
+    status: "in-progress";
+    progress: number;
+    data: JobData;
+    cancel: () => void;
+  }
   | {
-      status: "completed";
-      videoUrl: string;
-      data: JobData;
-    }
+    status: "completed";
+    videoUrl: string;
+    data: JobData;
+  }
   | {
-      status: "failed";
-      error: Error;
-      data: JobData;
-    };
+    status: "failed";
+    error: Error;
+    data: JobData;
+  };
 
-const compositionId = "HelloWorld";
+const compositionId = "RenderingComponent";
 
 export const makeRenderQueue = ({
   port,
@@ -77,6 +77,7 @@ export const makeRenderQueue = ({
         cancelSignal,
         serveUrl,
         composition,
+        concurrency: 48,
         inputProps,
         codec: "h264",
         onProgress: (progress) => {

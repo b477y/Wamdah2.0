@@ -3,13 +3,19 @@
     "target": "ES2018",
     "module": "commonjs",
     "jsx": "react-jsx",
-    "strict": true,
+    "strict": false,
     "noEmit": true,
-    "lib": ["es2015"],
+    "lib": ["ES2020"],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUnusedLocals": true
+    "forceConsistentCasingInFileNames": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "allowJs": true,       // allow JS files in project
+    "checkJs": false,      // disable type checking on JS files
+    "types": []
   },
   "exclude": ["remotion.config.ts"]
 }

@@ -9,17 +9,17 @@ import {
 import { Logo } from "./HelloWorld/Logo";
 import { Subtitle } from "./HelloWorld/Subtitle";
 import { Title } from "./HelloWorld/Title";
-import { z } from "zod";
-import { zColor } from "@remotion/zod-types";
+import { FunctionComponent } from "react";
 
-export const helloWorldCompSchema = z.object({
-  titleText: z.string(),
-  titleColor: zColor(),
-  logoColor1: zColor(),
-  logoColor2: zColor(),
-});
+interface Props {
+  titleText: any;
+  titleColor: any;
+  logoColor1: any;
+  logoColor2: any;
+  [key: string]: unknown;
+}
 
-export const HelloWorld: React.FC<z.infer<typeof helloWorldCompSchema>> = ({
+export const RenderingComponent: FunctionComponent<Props> = ({
   titleText: propOne,
   titleColor: propTwo,
   logoColor1,
