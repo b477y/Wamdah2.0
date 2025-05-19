@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import ScriptModel from "../../../db/models/Script.model";
 import searchImages from "../../../utils/imagesCollector/imagesCollector";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 export const generateScriptUsingGimini = async ({
   req,

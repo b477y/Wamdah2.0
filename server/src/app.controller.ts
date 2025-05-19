@@ -14,8 +14,20 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import session from "express-session";
 import passport from "./utils/passport/passport";
+import { makeRenderQueue } from "../render-queue";
 
-const bootstrap = (app, express) => {
+const bootstrap = (app, express, remotionBundleUrl: string) => {
+
+    const rendersDir = path.resolve("renders");
+  const queue = makeRenderQueue({
+    port: Number(3000),
+    serveUrl: remotionBundleUrl,
+    rendersDir,
+  });
+
+  // Host renders on /renders
+  app.use("/renders", express.static(rendersDir));
+
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "mySuperSecretKey123",
@@ -35,6 +47,21 @@ const bootstrap = (app, express) => {
   // Serve the videos directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
+
+  // Endpoint to create a new job
+  app.post("/renders", async (req, res) => {
+    const titleText = req.body?.titleText || "Hello, world!";
+
+    if (typeof titleText !== "string") {
+      res.status(400).json({ message: "titleText must be a string" });
+      return;
+    }
+
+    const jobId = queue.createJob({ titleText });
+
+    res.json({ jobId });
+  });
+
   app.use("/videos", express.static(path.join(__dirname, "../videos")));
 
   app.use("/api/auth", authController);
@@ -45,13 +72,13 @@ const bootstrap = (app, express) => {
   app.use("/api/user", userController);
   app.use("/api/testing", testingController);
 
-  app.get("", (req, res, next) => {
-    return res.status(200).json({ message: `${process.env.APP_NAME}` });
-  });
+  // app.get("", (req, res) => {
+  //   return res.status(200).json({ message: `${process.env.APP_NAME}` });
+  // });
 
-  app.all("*", (req, res) => {
-    return res.status(404).json({ message: "Invalid routing" });
-  });
+  // app.all("*", (req, res) => {
+  //   return res.status(404).json({ message: "Invalid routing" });
+  // });
 
   app.use(errorHandlingMiddleware);
 

@@ -7,7 +7,10 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 interface JobData {
+  words: any;
+  voiceoverUrl: any;
   titleText: string;
+  sentences: string[];
 }
 
 type JobState =
@@ -65,6 +68,9 @@ export const makeRenderQueue = ({
     try {
       const inputProps = {
         titleText: job.data.titleText,
+        sentences: job.data.sentences,
+        voiceoverUrl: job.data.voiceoverUrl,
+        words: job.data.words
       };
 
       const composition = await selectComposition({

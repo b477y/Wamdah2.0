@@ -5,8 +5,8 @@ import UserModel from '../../db/models/User.model';
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientID: "146654726525-69kq31dpk5ihb67hcvf87cjmne0d6p13.apps.googleusercontent.com",
+      clientSecret: "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",
       callbackURL: 'http://localhost:3000/api/auth/google/callback',
       scope: [
         'profile',

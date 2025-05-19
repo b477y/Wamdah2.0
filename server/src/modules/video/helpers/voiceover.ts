@@ -21,8 +21,8 @@ export const createVoiceOver = async ({
 }) => {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const API_URL = process.env.VOICE_API_URL;
-  const API_KEY = process.env.VOICE_API_KEY;
+  const API_URL = "https://api.fish.audio/v1/tts";
+  const API_KEY = "effa21e28aaf407b842d6564a10197c7";
 
   const msgpack = msgpack5();
 
@@ -47,7 +47,7 @@ export const createVoiceOver = async ({
       responseType: "arraybuffer",
     });
 
-    const outputDir = path.join(__dirname, "../../../../output/voices");
+    const outputDir = path.join(__dirname, "../../../../../renders");
 
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });

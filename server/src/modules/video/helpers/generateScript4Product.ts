@@ -4,7 +4,7 @@ import { scrapeText } from "./scraper";
 import { generateScriptWithAi } from "./scriptGenerator";
 import searchImages from "../../../utils/imagesCollector/imagesCollector";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 const generateScript4Product = async ({ req, url, language }) => {
   if (!req || !url || !language) {

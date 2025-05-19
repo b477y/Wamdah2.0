@@ -4,9 +4,9 @@ dotenv.config({ path: path.resolve("./src/config/.env") });
 import cloudinary from "cloudinary";
 
 cloudinary.v2.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
+  cloud_name: "dlt1zyqli",
+  api_key: "747424945431247",
+  api_secret: "nMcxMV3UfxLGch7pB4ZFPc-rkD4",
   secure: true,
 });
 

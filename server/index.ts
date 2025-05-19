@@ -1,71 +1,82 @@
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env from project root
+dotenv.config();
+
 import express from "express";
-import { makeRenderQueue } from "./render-queue";
+// import { makeRenderQueue } from "./render-queue";
 import { bundle } from "@remotion/bundler";
-import path from "node:path";
+
 import { ensureBrowser } from "@remotion/renderer";
+import bootstrap from './src/app.controller'
+
 
 const { PORT = 3000, REMOTION_SERVE_URL } = process.env;
 
-function setupApp({ remotionBundleUrl }: { remotionBundleUrl: string }) {
-  const app = express();
+const app = express();
 
-  const rendersDir = path.resolve("renders");
+// bootstrap(app, express, remotionBundleUrl)
 
-  const queue = makeRenderQueue({
-    port: Number(PORT),
-    serveUrl: remotionBundleUrl,
-    rendersDir,
-  });
+// function setupApp({ remotionBundleUrl }: { remotionBundleUrl: string }) {
 
-  // Host renders on /renders
-  app.use("/renders", express.static(rendersDir));
-  app.use(express.json());
+//   const rendersDir = path.resolve("renders");
 
-  // Endpoint to create a new job
-  app.post("/renders", async (req, res) => {
-    const titleText = req.body?.titleText || "Hello, world!";
+//   const queue = makeRenderQueue({
+//     port: Number(PORT),
+//     serveUrl: remotionBundleUrl,
+//     rendersDir,
+//   });
 
-    if (typeof titleText !== "string") {
-      res.status(400).json({ message: "titleText must be a string" });
-      return;
-    }
+//   // Host renders on /renders
+//   app.use("/renders", express.static(rendersDir));
+//   app.use(express.json());
 
-    const jobId = queue.createJob({ titleText });
+//   // Endpoint to create a new job
+//   app.post("/renders", async (req, res) => {
+//     const titleText = req.body?.titleText || "Hello, world!";
 
-    res.json({ jobId });
-  });
+//     if (typeof titleText !== "string") {
+//       res.status(400).json({ message: "titleText must be a string" });
+//       return;
+//     }
 
-  // Endpoint to get a job status
-  app.get("/renders/:jobId", (req, res) => {
-    const jobId = req.params.jobId;
-    const job = queue.jobs.get(jobId);
+//     const jobId = queue.createJob({ titleText });
 
-    res.json(job);
-  });
+//     res.json({ jobId });
+//   });
 
-  // Endpoint to cancel a job
-  app.delete("/renders/:jobId", (req, res) => {
-    const jobId = req.params.jobId;
+//   // Endpoint to get a job status
+//   app.get("/renders/:jobId", (req, res) => {
+//     const jobId = req.params.jobId;
+//     const job = queue.jobs.get(jobId);
 
-    const job = queue.jobs.get(jobId);
+//     res.json(job);
+//   });
 
-    if (!job) {
-      res.status(404).json({ message: "Job not found" });
-      return;
-    }
+//   // Endpoint to cancel a job
+//   app.delete("/renders/:jobId", (req, res) => {
+//     const jobId = req.params.jobId;
 
-    if (job.status !== "queued" && job.status !== "in-progress") {
-      res.status(400).json({ message: "Job is not cancellable" });
-      return;
-    }
+//     const job = queue.jobs.get(jobId);
 
-    job.cancel();
+//     if (!job) {
+//       res.status(404).json({ message: "Job not found" });
+//       return;
+//     }
 
-    res.json({ message: "Job cancelled" });
-  });
+//     if (job.status !== "queued" && job.status !== "in-progress") {
+//       res.status(400).json({ message: "Job is not cancellable" });
+//       return;
+//     }
 
-  return app;
-}
+//     job.cancel();
+
+//     res.json({ message: "Job cancelled" });
+//   });
+
+//   return app;
+// }
 
 async function main() {
   await ensureBrowser();
@@ -73,13 +84,13 @@ async function main() {
   const remotionBundleUrl = REMOTION_SERVE_URL
     ? REMOTION_SERVE_URL
     : await bundle({
-        entryPoint: path.resolve("remotion/index.ts"),
-        onProgress(progress) {
-          console.info(`Bundling Remotion project: ${progress}%`);
-        },
-      });
+      entryPoint: path.resolve("remotion/index.ts"),
+      onProgress(progress) {
+        console.info(`Bundling Remotion project: ${progress}%`);
+      },
+    });
 
-  const app = setupApp({ remotionBundleUrl });
+  await bootstrap(app, express, remotionBundleUrl)
 
   app.listen(PORT, () => {
     console.info(`Server is running on port ${PORT}`);
