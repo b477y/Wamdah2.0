@@ -5,8 +5,11 @@ import {
 } from "@remotion/renderer";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import uploadToCloud from "./src/modules/video/helpers/uploadToCloud";
+import VideoModel from "./src/db/models/Video.model";
 
 interface JobData {
+  voiceFile: any;
   words: any;
   voiceoverUrl: any;
   titleText: string;
@@ -69,7 +72,7 @@ export const makeRenderQueue = ({
       const inputProps = {
         titleText: job.data.titleText,
         sentences: job.data.sentences,
-        voiceoverUrl: job.data.voiceoverUrl,
+        voiceFile: job.data.voiceFile,
         words: job.data.words
       };
 
@@ -83,7 +86,7 @@ export const makeRenderQueue = ({
         cancelSignal,
         serveUrl,
         composition,
-        concurrency: 48,
+        concurrency: 28,
         inputProps,
         codec: "h264",
         onProgress: (progress) => {
@@ -103,6 +106,49 @@ export const makeRenderQueue = ({
         videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
         data: job.data,
       });
+
+      const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: job.data.localFilePath })
+      console.log(`uploaded`, cloudUploadResult);
+
+      const durationInSeconds = Math.round(cloudUploadResult.duration);
+
+      const video = await VideoModel.create({
+        createdBy: job.data.req.user._id,
+        title: job.data.title,
+        videoSource: cloudUploadResult,
+        scriptId: job.data.scriptId,
+        duration: durationInSeconds,
+        thumbnailUrl?: thumbnailResult.secure_url,
+        language: job.data.language,
+        accentOrDialect: job.data.accentOrDialect,
+        voiceId: job.data.voiceResponse.voice._id,
+      });
+
+      // if (!video) {
+      //   return next(
+      //     new Error("An error saving the video into the database", {
+      //       cause: 409,
+      //     })
+      //   );
+      // }
+
+      // console.log("Video data saved in the database!");
+
+      // const imagePath = path.resolve(
+      //   __dirname,
+      //   "../../../../../remotion/public/images/image1.jpg"
+      // );
+
+      // const thumbnailResult = await generateAndUploadThumbnail({
+      //   req,
+      //   imagePath,
+      //   title
+      // });
+
+
+      // if (!thumbnailResult) {
+      //   next(new Error("An error occured while getting the thumbnail url"));
+      // }
     } catch (error) {
       console.error(error);
       jobs.set(jobId, {

@@ -1,36 +1,23 @@
 import axios from 'axios';
 
-const DEEPGRAM_API_KEY = "b447b0339a744cb1b747dbfe68d36d398ee75850";
-
-if (!DEEPGRAM_API_KEY) {
-    throw new Error("Missing Deepgram API key in environment variables.");
-}
-
-export async function getWordTimestampsFromScript(voiceoverUrl: string) {
+/**
+ * Send absolute audio path to FastAPI server on the same machine.
+ */
+export async function getWordTimestampsFromScript(absolutePath: string) {
     try {
-        const response = await axios.post(
-            'https://api.deepgram.com/v1/listen?model=whisper&language=ar',
-            {
-                url: voiceoverUrl, // Or your own Arabic voiceover URL
-            },
-            {
-                headers: {
-                    Authorization: `Token ${DEEPGRAM_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
+        const response = await axios.post('http://localhost:8000/transcribe', {
+            path: absolutePath
+        });
 
-        const words = response.data?.results?.channels?.[0]?.alternatives?.[0]?.words;
+        const { ...words } = response.data;
 
         if (!words || words.length === 0) {
-            console.warn("Deepgram returned no words:", response.data);
-            throw new Error("No words found in transcription result.");
+            throw new Error("No words returned from transcription server.");
         }
 
-        return words; // array of { word, start, end, punctuated_word }
+        return words ;
     } catch (err) {
-        console.error("Transcription failed:", err);
-        throw new Error("Deepgram transcription failed.");
+        console.error("Transcription failed:", err.response?.data || err.message);
+        throw new Error("Transcription failed.");
     }
 }

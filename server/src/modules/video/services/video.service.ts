@@ -43,15 +43,7 @@ const queue = makeRenderQueue({
 
 // Instant video
 export const generateVideo = asyncHandler(async (req, res, next) => {
-  console.log(req.user);
-
-
-
-
-  /////////////////////////////////////////////
-  // const startTime = Date.now();
   const { userPrompt, type, language, accentOrDialect } = req.body;
-  // const framesPerSentence = calculateFrames(accentOrDialect);
   const voiceActor = await VoiceActorModel.findOne({ language, accentOrDialect });
   const referenceId = voiceActor.referenceId;
   if (!referenceId) { next(new Error("Failed to find voiceover actor with selected options")); }
@@ -85,20 +77,23 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
     accentOrDialect,
   });
 
-  if (!voiceResponse.voice.voiceSource.secure_url) {
+  if (!voiceResponse.outputFilePath) {
     next(new Error("Failed to generate voiceover correctly and upload it correctly"));
   }
 
-  const voiceoverUrl = voiceResponse.voice.voiceSource.secure_url || null;
+  // const voiceoverUrl = voiceResponse.voice.voiceSource.secure_url || null;
+  const localFilePath = voiceResponse.outputFilePath || null;
 
-  console.log("Voiceover URL:", voiceoverUrl);
+  // console.log("Voiceover URL:", voiceoverUrl);
+  console.log(localFilePath);
+  const voiceFile = path.basename(voiceResponse.outputFilePath);
 
-  const words = await getWordTimestampsFromScript(voiceoverUrl)
+  const words = await getWordTimestampsFromScript(localFilePath)
   console.log(words);
 
-  const sentences = splitText(script);
-
-  console.log("Sentences to render:", sentences);
+  const wordArray = Object.keys(words)
+    .sort((a, b) => Number(a) - Number(b)) // ensure sorted by key
+    .map(key => words[key]);
 
   // const totalFrames = sentences.length * framesPerSentence;
   // const fontSize = req.body.fontSize || 80;
@@ -134,7 +129,7 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
 
   const jobId = queue.createJob({
-    titleText: req.body.titleText, words, voiceoverUrl
+    req, titleText: req.body.titleText, words: wordArray, voiceFile, title, localFilePath
   });
 
   res.status(200).json({ jobId });

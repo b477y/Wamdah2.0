@@ -1,10 +1,10 @@
 import * as fs from "node:fs";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
 
-const uploadToCloud = async ({ req, title, outputLocation }) => {
+const uploadToCloud = async ({ req, title, localFilePath }) => {
   return new Promise((resolve, reject) => {
     cloud.uploader.upload_large(
-      outputLocation,
+      localFilePath,
       {
         folder: `${process.env.APP_NAME}/${req.user._id}/${title}_${Date.now()}`,
         resource_type: "video",
@@ -19,9 +19,9 @@ const uploadToCloud = async ({ req, title, outputLocation }) => {
         console.log("✅ Video upload completed!");
 
         // Async deletion, logging any error but not failing upload because of it
-        fs.unlink(outputLocation, (err) => {
+        fs.unlink(localFilePath, (err) => {
           if (err) console.warn("Failed to delete local video file:", err);
-          else console.log("Deleted local file:", outputLocation);
+          else console.log("Deleted local file:", localFilePath);
         });
 
         resolve(result); // <-- result contains secure_url, public_id, etc.

@@ -59,18 +59,18 @@ export const createVoiceOver = async ({
 
     console.log("Voice file path:", outputFilePath);
 
-    const cloudUploadResult = await cloud.uploader.upload(outputFilePath, {
-      folder: `${process.env.APP_NAME}/${req.user._id}/${title}/voice`,
-      resource_type: "auto",
-    });
+    // const cloudUploadResult = await cloud.uploader.upload(outputFilePath, {
+    //   folder: `${process.env.APP_NAME}/${req.user._id}/${title}/voice`,
+    //   resource_type: "auto",
+    // });
 
-    fs.unlinkSync(outputFilePath);
+    // fs.unlinkSync(outputFilePath);
 
     const { _id } = await VoiceActorModel.findOne({ referenceId: reference_id })
 
     const voice = await VoiceModel.create({
       createdBy: req.user._id,
-      voiceSource: cloudUploadResult,
+      // voiceSource: cloudUploadResult,
       scriptId,
       voiceoverActorId: _id,
       language,
@@ -83,7 +83,7 @@ export const createVoiceOver = async ({
       );
     }
 
-    return { voice };
+    return { voice, outputFilePath };
   } catch (error) {
     console.error("Voiceover Error:", error);
     throw new Error("Failed to generate voiceover");

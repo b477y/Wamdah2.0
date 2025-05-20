@@ -4,6 +4,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
   Audio,
+  staticFile
 } from "remotion";
 import { FunctionComponent, useMemo } from "react";
 
@@ -43,7 +44,7 @@ interface Props {
   highlightColor?: string;
   fadeIn?: boolean;
   fadeDuration?: number; // in seconds
-  voiceoverUrl?: string;
+  voiceFile?: string;
   backgroundColor?: string;
   wordBackground?: string;
   wordPadding?: string;
@@ -89,13 +90,10 @@ export const RenderingComponent: FunctionComponent<Props> = ({
   fontSize = 60,
   fontFamily = "Roboto",
   textColor = "#000000",
-  backgroundColor = "white",
-  wordBackground = "rgba(0, 0, 0, 0.2)",
   highlightColor = "#FF9800",
   fadeIn = true,
   fadeDuration = 0.2,
-  voiceoverUrl = "",
-  wordPadding = "0.2em 0.4em",
+  voiceFile = "",
   borderRadius = 6,
   debug = false,
 }) => {
@@ -108,6 +106,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
   if (fontLoader) {
     fontLoader();
   }
+
+    const audioPath = `http://localhost:3000/renders/${voiceFile}`;
 
   const activeWord = useMemo(() => {
     return words.find(
@@ -141,7 +141,7 @@ export const RenderingComponent: FunctionComponent<Props> = ({
       position: 'absolute',
       bottom: 20,
       left: 20,
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      backgroundColor: 'white',
       color: 'white',
       padding: '10px',
       borderRadius: '4px',
@@ -162,8 +162,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
 
   if (words.length === 0) {
     return (
-      <AbsoluteFill style={{ 
-        justifyContent: "center", 
+      <AbsoluteFill style={{
+        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "white",
       }}>
@@ -175,13 +175,14 @@ export const RenderingComponent: FunctionComponent<Props> = ({
   return (
     <AbsoluteFill
       style={{
-        justifyContent: "center",
-        alignItems: "center",
+        backgroundColor: "white",  // <-- Add this line here
         display: "flex",
-        backgroundColor: backgroundColor,
+        justifyContent: "flex-end", // align vertically to bottom
+        alignItems: "center",       // horizontally centered
+        paddingBottom: 150,          // adjust the padding as needed
       }}
     >
-      {voiceoverUrl && <Audio src={voiceoverUrl} />}
+      {audioPath && <Audio src={audioPath} />}
 
       {activeWord ? (
         <span
@@ -189,17 +190,15 @@ export const RenderingComponent: FunctionComponent<Props> = ({
             fontSize,
             fontFamily,
             color: highlightColor,
-            opacity: fadeOpacity,
-            transition: "all 0.3s",
-            backgroundColor: wordBackground,
-            padding: wordPadding,
+            // opacity: fadeOpacity,
+            // transition: "all 0.3s",
             borderRadius,
             whiteSpace: "nowrap",
             textAlign: isArabicText(displayWord) ? "right" : "left",
             direction: isArabicText(displayWord) ? "rtl" : "ltr",
           }}
-          aria-live="assertive"
-          aria-atomic="true"
+        // aria-live="assertive"
+        // aria-atomic="true"
         >
           {displayWord}
         </span>

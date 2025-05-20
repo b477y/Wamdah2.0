@@ -6,7 +6,7 @@ import { scrapeText } from "../../video/helpers/scraper";
 import { generateScriptWithAi } from "../../video/helpers/scriptGenerator";
 import searchImages from "../../../utils/imagesCollector/imagesCollector";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 export const generateScript4Product = asyncHandler(async (req, res, next) => {
   const { url, language } = req.body;
@@ -42,7 +42,7 @@ Task:
   });
 
   // Use keyword to fetch related images
-  await searchImages(keyword);
+  // await searchImages(keyword);
 
   // Send response
   return successResponse({
@@ -59,10 +59,9 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
   const typePrompts = {
     motivational:
       "Create an uplifting and motivating script to inspire the audience.",
-    advertisement:
-      "Create a persuasive advertisement script highlighting the benefits of a product or service.",
-    script:
-      "Write a general-purpose, engaging script that can work for various video types.",
+    educational:
+      "Write an informative and concise script to explain a concept clearly to a general audience.",
+    tech: "Create a script that simplifies a technical topic, making it engaging and easy to understand.",
   };
 
   const typePrompt = typePrompts[type];
@@ -72,11 +71,12 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
     ${typePrompt}
     The content for this video is: ${userPrompt}
     Please structure the script as follows:
-    - Break the content into short, easy-to-read sentences that fit within 3 seconds when spoken.
+    - Output should be plain text with sentences separated by a ".".
+    - Break the content into short, easy-to-read sentences that fit within 1 second when spoken.
+    - Sentences should consists of 3 words only not less than 3 words.
     - Use natural, engaging language, as if speaking directly to the audience.
     - Avoid long sentences, complex phrases, or unnecessary punctuation.
     - Ensure the script flows naturally and smoothly, without line breaks or section titles.
-    - Output should be plain text with sentences separated by a ".".
     - End with a clear and actionable sentence that encourages engagement.
     - All the script should be in ${language}.
   `;
@@ -113,7 +113,7 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
     generatedByAi: true,
   });
 
-  await searchImages(title);
+  // await searchImages(title);
 
   return successResponse({
     res,

@@ -18,15 +18,19 @@ import { makeRenderQueue } from "../render-queue";
 
 const bootstrap = (app, express, remotionBundleUrl: string) => {
 
-    const rendersDir = path.resolve("renders");
+  const rendersDir = path.resolve("renders");
   const queue = makeRenderQueue({
     port: Number(3000),
     serveUrl: remotionBundleUrl,
     rendersDir,
   });
 
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
   // Host renders on /renders
   app.use("/renders", express.static(rendersDir));
+  app.use('/public', express.static(path.join(__dirname, '../../public')));
 
   app.use(
     session({
@@ -45,8 +49,7 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
   app.use(morgan("dev"));
   app.use(cookieParser());
   // Serve the videos directory
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+
 
   // Endpoint to create a new job
   app.post("/renders", async (req, res) => {
@@ -60,6 +63,14 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
     const jobId = queue.createJob({ titleText });
 
     res.json({ jobId });
+  });
+
+  // Endpoint to get a job status
+  app.get("/renders/:jobId", (req, res) => {
+    const jobId = req.params.jobId;
+    const job = queue.jobs.get(jobId);
+
+    res.json(job);
   });
 
   app.use("/videos", express.static(path.join(__dirname, "../videos")));
