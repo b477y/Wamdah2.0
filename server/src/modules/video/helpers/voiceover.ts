@@ -11,7 +11,6 @@ import VoiceActorModel from "../../../db/models/VoiceActor.model";
 
 export const createVoiceOver = async ({
   req,
-  title,
   scriptText,
   reference_id,
   format = "mp3",
@@ -22,7 +21,8 @@ export const createVoiceOver = async ({
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const API_URL = "https://api.fish.audio/v1/tts";
-  const API_KEY = "effa21e28aaf407b842d6564a10197c7";
+  const API_KEY = "73245036b7b841fba6cdc80e4c13b251";
+  // const API_KEY = "4d374ac32815402f8680ed87d6b262ba"; another 100 credits
 
   const msgpack = msgpack5();
 

@@ -20,7 +20,7 @@ const app = express();
 
 // function setupApp({ remotionBundleUrl }: { remotionBundleUrl: string }) {
 
-//   const rendersDir = path.resolve("renders");
+  // const rendersDir = path.resolve("renders");
 
 //   const queue = makeRenderQueue({
 //     port: Number(PORT),

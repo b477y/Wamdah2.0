@@ -18,6 +18,7 @@ import uploadToCloud from "../helpers/uploadToCloud";
 import { generateAndUploadThumbnail } from "../helpers/generateAndUploadThumbnail.js";
 import { makeRenderQueue } from "../../../../render-queue";
 import { getWordTimestampsFromScript } from "../helpers/transcription";
+import ScriptModel from "../../../db/models/Script.model";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,7 +36,8 @@ const remotionBundleUrl = await bundle({
 });
 
 const rendersDir = path.resolve("renders");
-const queue = makeRenderQueue({
+
+export const queue = makeRenderQueue({
   port: Number(3000),
   serveUrl: remotionBundleUrl,
   rendersDir,
@@ -43,34 +45,54 @@ const queue = makeRenderQueue({
 
 // Instant video
 export const generateVideo = asyncHandler(async (req, res, next) => {
-  const { userPrompt, type, language, accentOrDialect } = req.body;
+  const { title, generatedScript, customScript, language, accentOrDialect } = req.body;
+
+  let generatedByAi = false;
+  let content = "";
+
+  if (generatedScript) {
+    content = generatedScript;
+    generatedByAi = true;
+  } else if (customScript) {
+    content = customScript;
+  } else {
+    return res.status(400).json({ error: "No script content provided." });
+  }
+
+  const script = await ScriptModel.create({
+    title,
+    content,
+    createdBy: req.user._id,
+    generatedByAi
+  });
+
   const voiceActor = await VoiceActorModel.findOne({ language, accentOrDialect });
   const referenceId = voiceActor.referenceId;
   if (!referenceId) { next(new Error("Failed to find voiceover actor with selected options")); }
 
   // try {
-  console.log("Generating Script...");
+  // console.log("Generating Script...");
 
-  const scriptResponse = await generateScriptUsingGimini({ req, type, userPrompt, language });
+  // const scriptResponse = await generateScriptUsingGimini({ req, type, userPrompt, language });
 
-  console.log(scriptResponse);
+  // console.log(scriptResponse);
 
-  if (!scriptResponse.script || !scriptResponse.formattedScript || !scriptResponse.title) {
-    throw new Error("Failed to generate script correctly.");
-  }
+  // if (!scriptResponse.script || !scriptResponse.formattedScript || !scriptResponse.title) {
+  //   throw new Error("Failed to generate script correctly.");
+  // }
 
-  const script = scriptResponse.formattedScript || "";
-  const scriptId = scriptResponse.script._id || "";
-  const title = scriptResponse.title || "";
+  // const script = scriptResponse.formattedScript || "";
+  const scriptId = script._id || "";
+  // const title = scriptResponse.title || "";
 
   console.log("Formatted script:", script);
 
   // try {
-  console.log("Generating Voiceover...");
+  // console.log("Generating Voiceover...");
   const voiceResponse = await createVoiceOver({
     req,
     title,
-    scriptText: script,
+    scriptText: content,
     reference_id: referenceId,
     scriptId,
     language,
@@ -129,7 +151,7 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
 
   const jobId = queue.createJob({
-    req, titleText: req.body.titleText, words: wordArray, voiceFile, title, localFilePath
+    titleText: req.body.titleText, words: wordArray, voiceFile, title, localFilePath, req, voiceResponse, scriptId
   });
 
   res.status(200).json({ jobId });

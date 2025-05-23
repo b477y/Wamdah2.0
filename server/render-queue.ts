@@ -13,7 +13,6 @@ interface JobData {
   words: any;
   voiceoverUrl: any;
   titleText: string;
-  sentences: string[];
 }
 
 type JobState =
@@ -71,7 +70,6 @@ export const makeRenderQueue = ({
     try {
       const inputProps = {
         titleText: job.data.titleText,
-        sentences: job.data.sentences,
         voiceFile: job.data.voiceFile,
         words: job.data.words
       };
@@ -81,6 +79,12 @@ export const makeRenderQueue = ({
         id: compositionId,
         inputProps,
       });
+
+
+      const outputLocation = path.join(rendersDir, `${jobId}.mp4`);
+
+      // Update job.data.localFilePath
+      job.data.localFilePath = outputLocation;
 
       await renderMedia({
         cancelSignal,
@@ -98,8 +102,11 @@ export const makeRenderQueue = ({
             data: job.data,
           });
         },
-        outputLocation: path.join(rendersDir, `${jobId}.mp4`),
+        outputLocation,
       });
+
+      const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
+      console.log(`uploaded`, cloudUploadResult);
 
       jobs.set(jobId, {
         status: "completed",
@@ -107,18 +114,17 @@ export const makeRenderQueue = ({
         data: job.data,
       });
 
-      const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: job.data.localFilePath })
-      console.log(`uploaded`, cloudUploadResult);
-
       const durationInSeconds = Math.round(cloudUploadResult.duration);
+      console.log(jobId);
 
       const video = await VideoModel.create({
+        jobId,
         createdBy: job.data.req.user._id,
         title: job.data.title,
         videoSource: cloudUploadResult,
         scriptId: job.data.scriptId,
         duration: durationInSeconds,
-        thumbnailUrl?: thumbnailResult.secure_url,
+        // thumbnailUrl: thumbnailResult.secure_url,
         language: job.data.language,
         accentOrDialect: job.data.accentOrDialect,
         voiceId: job.data.voiceResponse.voice._id,

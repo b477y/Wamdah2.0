@@ -1,8 +1,5 @@
 import axios from 'axios';
 
-/**
- * Send absolute audio path to FastAPI server on the same machine.
- */
 export async function getWordTimestampsFromScript(absolutePath: string) {
     try {
         const response = await axios.post('http://localhost:8000/transcribe', {

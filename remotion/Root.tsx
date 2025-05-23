@@ -1,22 +1,19 @@
 import { Composition } from "remotion";
 import { RenderingComponent } from "./renderingComponent";
 
-// Each <Composition> is an entry in the sidebar!
+// Define video duration
+const durationInFrames = 60 * 30; // 60 seconds × 30 fps = 1800 frames
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        // You can take the "id" to render a video:
-        // npx remotion render src/index.ts <id> out/video.mp4
         id="RenderingComponent"
         component={RenderingComponent}
         durationInFrames={durationInFrames}
         fps={30}
         width={1080}
         height={1920}
-        // You can override these props for each render:
-        // https://www.remotion.dev/docs/parametrized-rendering
         defaultProps={{
           titleText: "Render Server Template",
           titleColor: "#000000",

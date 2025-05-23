@@ -4,6 +4,7 @@ import UserModel from "./User.model";
 
 const VideoSchema = new mongoose.Schema(
   {
+    jobId: String,
     createdBy: { type: mongoose.Types.ObjectId, ref: "User", required: true },
     title: { type: String, required: true },
     videoSource: { secure_url: { type: String, required: true }, public_id: { type: String, required: true }, },

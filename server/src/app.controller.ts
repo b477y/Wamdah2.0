@@ -15,15 +15,17 @@ import morgan from "morgan";
 import session from "express-session";
 import passport from "./utils/passport/passport";
 import { makeRenderQueue } from "../render-queue";
+import { queue } from "./modules/video/services/video.service";
+import VideoModel from "./db/models/Video.model";
 
 const bootstrap = (app, express, remotionBundleUrl: string) => {
 
   const rendersDir = path.resolve("renders");
-  const queue = makeRenderQueue({
-    port: Number(3000),
-    serveUrl: remotionBundleUrl,
-    rendersDir,
-  });
+  // const queue = makeRenderQueue({
+  //   port: Number(3000),
+  //   serveUrl: remotionBundleUrl,
+  //   rendersDir,
+  // });
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -50,6 +52,24 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
   app.use(cookieParser());
   // Serve the videos directory
 
+  // const { PORT = 3000, REMOTION_SERVE_URL } = process.env;
+
+  // const rendersDir = path.resolve("renders");
+
+  // const remotionBundleUrl = REMOTION_SERVE_URL
+  //   ? REMOTION_SERVE_URL
+  //   : await bundle({
+  //     entryPoint: path.resolve("remotion/index.ts"),
+  //     onProgress(progress) {
+  //       console.info(`Bundling Remotion project: ${progress}%`);
+  //     },
+  //   });
+
+  // const queue = makeRenderQueue({
+  //   port: Number(PORT),
+  //   serveUrl: remotionBundleUrl,
+  //   rendersDir,
+  // });
 
   // Endpoint to create a new job
   app.post("/renders", async (req, res) => {
@@ -66,11 +86,26 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
   });
 
   // Endpoint to get a job status
-  app.get("/renders/:jobId", (req, res) => {
+  app.get("/renders/:jobId", async (req, res) => {
     const jobId = req.params.jobId;
     const job = queue.jobs.get(jobId);
 
-    res.json(job);
+    if (!job) {
+      return res.status(404).json({ error: "Invalid JobId" });
+    }
+
+    let video;
+
+    if (job.status === "completed") {
+      console.log("completed");
+      video = await VideoModel.findOne({ jobId })
+    }
+
+    res.json({
+      status: job.status,
+      progress: job.progress,
+      video
+    });
   });
 
   app.use("/videos", express.static(path.join(__dirname, "../videos")));
