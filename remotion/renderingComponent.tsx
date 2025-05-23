@@ -4,7 +4,8 @@ import {
   useCurrentFrame,
   useVideoConfig,
   Audio,
-  staticFile
+  staticFile,
+  Video
 } from "remotion";
 import { FunctionComponent, useMemo } from "react";
 
@@ -85,6 +86,8 @@ export const isArabicText = (text: string): boolean => {
   return arabicPattern.test(text);
 };
 
+
+
 export const RenderingComponent: FunctionComponent<Props> = ({
   words = [],
   fontSize = 60,
@@ -94,6 +97,7 @@ export const RenderingComponent: FunctionComponent<Props> = ({
   fadeIn = true,
   fadeDuration = 0.2,
   voiceFile = "",
+  aiAvatarFile = "",
   borderRadius = 6,
   debug = false,
 }) => {
@@ -107,7 +111,12 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     fontLoader();
   }
 
-    const audioPath = `http://localhost:3000/renders/${voiceFile}`;
+  const audioPath = `http://localhost:3000/renders/${voiceFile}`;
+  const aiAvatarPath = `http://localhost:3000/renders/aiAvatars/${aiAvatarFile}`;
+  // const  = fileName ? staticFile(`videos/${fileName}`) : null;
+
+
+
 
   const activeWord = useMemo(() => {
     return words.find(
@@ -172,6 +181,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     );
   }
 
+
+
   return (
     <AbsoluteFill
       style={{
@@ -183,6 +194,23 @@ export const RenderingComponent: FunctionComponent<Props> = ({
       }}
     >
       {audioPath && <Audio src={audioPath} />}
+
+      {/* Avatar Video — only if fileName is provided */}
+      {aiAvatarPath && (
+        <Video
+          src={aiAvatarPath}
+          startFrom={0}
+          muted={!!audioPath}
+          style={{
+            position: "absolute",
+            top: "960px",
+            width: "100%",
+            height: "960px",
+            objectFit: "cover",
+            zIndex: 1,
+          }}
+        />
+      )}
 
       {activeWord ? (
         <span

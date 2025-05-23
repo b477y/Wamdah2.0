@@ -9,7 +9,7 @@ import VideoModel from "../../../db/models/Video.model";
 import { generateScriptUsingGimini } from "../helpers/generateScriptUsingGimini";
 import { createVoiceOver } from "../helpers/voiceover";
 import splitText from "../helpers/splitText";
-import { generateAiAvatarWithCroma } from "../../aiAvatar/services/aiAvatar.service";
+import { generateAiAvatarWOCroma } from "../../aiAvatar/services/aiAvatar.service";
 import generateScript4Product from "../helpers/generateScript4Product";
 import VoiceActorModel from "../../../db/models/VoiceActor.model";
 import { getFontLoader } from "../helpers/getfontLoader";
@@ -45,7 +45,7 @@ export const queue = makeRenderQueue({
 
 // Instant video
 export const generateVideo = asyncHandler(async (req, res, next) => {
-  const { title, generatedScript, customScript, language, accentOrDialect } = req.body;
+  const { title, generatedScript, customScript, language, accentOrDialect, type } = req.body;
 
   let generatedByAi = false;
   let content = "";
@@ -219,139 +219,169 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
 // AI Spoke person
 export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
-  const { userPrompt, type, language, accentOrDialect, speaker } = req.body;
-  const framesPerSentence = calculateFrames(accentOrDialect);
+  const { title, generatedScript, customScript, type, language, accentOrDialect, speaker } = req.body;
 
-  try {
-    console.log("Generating Script...");
+  let generatedByAi = false;
+  let content = "";
 
-    const scriptResponse = await generateScriptUsingGimini({ req, type, userPrompt, language });
-
-    console.log(scriptResponse);
-
-    if (!scriptResponse.script || !scriptResponse.formattedScript || !scriptResponse.title) {
-      throw new Error("Failed to generate script correctly.");
-    }
-
-    const script = scriptResponse.formattedScript || "";
-    const scriptId = scriptResponse.script._id || "";
-    const title = scriptResponse.title || "";
-
-    console.log("Formatted script:", script);
-
-    try {
-      const aiAvatarResponse = await generateAiAvatarWithCroma({ req, speaker, script })
-
-      console.log(aiAvatarResponse.videoSource.secure_url);
-      console.log(aiAvatarResponse.videoSource.fileName);
-
-      const sentences = splitText(script);
-
-      console.log("Sentences to render:", sentences);
-
-      const totalFrames = sentences.length * framesPerSentence;
-
-      const fontSize = req.body.fontSize || 80;
-      const color = req.body.color || "white";
-      const fontFamily = req.body.fontFamily || "Cairo";
-
-      const fontLoader = getFontLoader(fontFamily);
-      const { fontFamily: selectedFont } = await fontLoader();
-
-      console.log(`Bundling project from: ${indexPath}`);
-      const bundled = await bundle(indexPath);
-
-      const compositions = await getCompositions(bundled, {
-        inputProps: {
-          // sentences,
-          fontSize,
-          color,
-          fontFamily,
-          fileName: aiAvatarResponse.videoSource.fileName,
-          framesPerSentence
-        },
-      });
-
-      const composition = compositions.find((c) => c.id === "MyVideo");
-
-      if (!composition) {
-        throw new Error("Composition 'MyVideo' not found!");
-      }
-
-      console.log("Composition found. Rendering video...");
-
-      const outputLocation = `./output/video-${Date.now()}.mp4`;
-
-      await renderMedia({
-        concurrency: 1,
-        timeoutInMilliseconds: 60000,
-        composition: {
-          ...composition,
-          durationInFrames: totalFrames,
-        },
-        serveUrl: bundled,
-        codec: "h264",
-        outputLocation,
-        inputProps: {
-          // sentences,
-          fontSize,
-          color,
-          fontFamily,
-          fileName: aiAvatarResponse.videoSource.fileName,
-          framesPerSentence
-        },
-      });
-
-      console.log("Video rendering completed!");
-      const cloudUploadResult = await uploadToCloud({ req, title, outputLocation })
-      const durationInSeconds = Math.round(cloudUploadResult.duration);
-
-      console.log("Video uploading completed!");
-
-      const imagePath = path.resolve(
-        __dirname,
-        "../../../../../remotion/public/images/image1.jpg"
-      );
-
-      const thumbnailResult = await generateAndUploadThumbnail({
-        req,
-        imagePath,
-        title
-      });
-
-
-      if (!thumbnailResult) {
-        next(new Error("An error occured while getting the thumbnail url"));
-      }
-
-      const video = await VideoModel.create({
-        createdBy: req.user._id,
-        title,
-        videoSource: cloudUploadResult,
-        thumbnailUrl: thumbnailResult.secure_url,
-        scriptId,
-        language,
-        accentOrDialect,
-        duration: durationInSeconds,
-      });
-
-      console.log("Video data saved in the database!");
-
-      return successResponse({
-        res,
-        status: 201,
-        message: "Video created successfully",
-        data: { video },
-      });
-    } catch (error) {
-      console.error("Error generating video:", error);
-      res.status(500).json({ error: "Video generation failed." });
-    }
-  } catch (error) {
-    console.error("Error generating voiceover:", error);
-    res.status(500).json({ error: "Voiceover generation failed." });
+  if (generatedScript) {
+    content = generatedScript;
+    generatedByAi = true;
+  } else if (customScript) {
+    content = customScript;
+  } else {
+    return res.status(400).json({ error: "No script content provided." });
   }
-  res.status(500).json({ error: "Video generation failed." });
+
+  const script = await ScriptModel.create({
+    title,
+    content,
+    createdBy: req.user._id,
+    generatedByAi
+  });
+
+  // const framesPerSentence = calculateFrames(accentOrDialect);
+
+  // try {
+  // console.log("Generating Script...");
+
+  // const scriptResponse = await generateScriptUsingGimini({ req, type, userPrompt, language });
+
+  // console.log(scriptResponse);
+
+  // if (!scriptResponse.script || !scriptResponse.formattedScript || !scriptResponse.title) {
+  //   throw new Error("Failed to generate script correctly.");
+  // }
+
+  // const script = scriptResponse.formattedScript || "";
+  // const scriptId = scriptResponse.script._id || "";
+  // const title = scriptResponse.title || "";
+
+  // console.log("Formatted script:", script);
+
+  // try {
+  const aiAvatarResponse = await generateAiAvatarWOCroma({ req, speaker, script: script.content })
+
+  const wordArray = aiAvatarResponse.wordArray
+  const aiAvatarFile = aiAvatarResponse.aiAvatarFile
+
+  // console.log(aiAvatarResponse.videoSource.secure_url);
+  // console.log(aiAvatarResponse.aiAvatarFile);
+
+  // const sentences = splitText(script);
+
+  // console.log("Sentences to render:", sentences);
+
+  // const totalFrames = sentences.length * framesPerSentence;
+
+  // const fontSize = req.body.fontSize || 80;
+  // const color = req.body.color || "white";
+  // const fontFamily = req.body.fontFamily || "Cairo";
+
+  // const fontLoader = getFontLoader(fontFamily);
+  // const { fontFamily: selectedFont } = await fontLoader();
+
+  // console.log(`Bundling project from: ${indexPath}`);
+  // const bundled = await bundle(indexPath);
+
+  // const compositions = await getCompositions(bundled, {
+  //   inputProps: {
+  //     // sentences,
+  //     fontSize,
+  //     color,
+  //     fontFamily,
+  //     aiAvatarFile: aiAvatarResponse.aiAvatarFile,
+  //     // framesPerSentence
+  //   },
+  // });
+
+  // const audionfile = aiAvatarResponse.aiAvatarVoiceFile
+  // const composition = compositions.find((c) => c.id === "MyVideo");
+
+  // if (!composition) {
+  //   throw new Error("Composition 'MyVideo' not found!");
+  // }
+
+  // console.log("Composition found. Rendering video...");
+
+  // const outputLocation = `./output/video-${Date.now()}.mp4`;
+
+  // await renderMedia({
+  //   concurrency: 1,
+  //   timeoutInMilliseconds: 60000,
+  //   composition: {
+  //     ...composition,
+  //     durationInFrames: totalFrames,
+  //   },
+  //   serveUrl: bundled,
+  //   codec: "h264",
+  //   outputLocation,
+  //   inputProps: {
+  //     // sentences,
+  //     fontSize,
+  //     color,
+  //     fontFamily,
+  //     aiAvatarFile: aiAvatarResponse.videoSource.aiAvatarFile,
+  //     framesPerSentence
+  //   },
+  // });
+
+  // console.log("Video rendering completed!");
+  // const cloudUploadResult = await uploadToCloud({ req, title, outputLocation })
+  // const durationInSeconds = Math.round(cloudUploadResult.duration);
+
+  // console.log("Video uploading completed!");
+
+  // const imagePath = path.resolve(
+  //   __dirname,
+  //   "../../../../../remotion/public/images/image1.jpg"
+  // );
+
+  // const thumbnailResult = await generateAndUploadThumbnail({
+  //   req,
+  //   imagePath,
+  //   title
+  // });
+
+
+  // if (!thumbnailResult) {
+  //   next(new Error("An error occured while getting the thumbnail url"));
+  // }
+
+  // const video = await VideoModel.create({
+  //   createdBy: req.user._id,
+  //   title,
+  //   videoSource: cloudUploadResult,
+  //   thumbnailUrl: thumbnailResult.secure_url,
+  //   scriptId,
+  //   language,
+  //   accentOrDialect,
+  //   duration: durationInSeconds,
+  // });
+
+  // console.log("Video data saved in the database!");
+
+  const jobId = queue.createJob({
+    titleText: req.body.titleText, words: wordArray, title, req, scriptId: script._id, aiAvatarFile
+  });
+
+  res.status(200).json({ jobId });
+
+  // return successResponse({
+  //   res,
+  //   status: 201,
+  //   message: "Video created successfully",
+  //   data: { video },
+  // });
+  // } catch (error) {
+  //   console.error("Error generating video:", error);
+  //   res.status(500).json({ error: "Video generation failed." });
+  // }
+  // } catch (error) {
+  //   console.error("Error generating voiceover:", error);
+  //   res.status(500).json({ error: "Voiceover generation failed." });
+  // }
+  // res.status(500).json({ error: "Video generation failed." });
 });
 
 // Ad video

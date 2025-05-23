@@ -71,7 +71,8 @@ export const makeRenderQueue = ({
       const inputProps = {
         titleText: job.data.titleText,
         voiceFile: job.data.voiceFile,
-        words: job.data.words
+        words: job.data.words,
+        aiAvatarFile: job.data.aiAvatarFile
       };
 
       const composition = await selectComposition({
@@ -84,7 +85,7 @@ export const makeRenderQueue = ({
       const outputLocation = path.join(rendersDir, `${jobId}.mp4`);
 
       // Update job.data.localFilePath
-      job.data.localFilePath = outputLocation;
+      // job.data.localFilePath = outputLocation;
 
       await renderMedia({
         cancelSignal,
@@ -108,11 +109,7 @@ export const makeRenderQueue = ({
       const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
       console.log(`uploaded`, cloudUploadResult);
 
-      jobs.set(jobId, {
-        status: "completed",
-        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
-        data: job.data,
-      });
+
 
       const durationInSeconds = Math.round(cloudUploadResult.duration);
       console.log(jobId);
@@ -128,6 +125,12 @@ export const makeRenderQueue = ({
         language: job.data.language,
         accentOrDialect: job.data.accentOrDialect,
         voiceId: job.data.voiceResponse.voice._id,
+      });
+
+      jobs.set(jobId, {
+        status: "completed",
+        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
+        data: job.data,
       });
 
       // if (!video) {

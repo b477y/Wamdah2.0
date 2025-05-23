@@ -7,7 +7,7 @@ const router = Router();
 router.post(
   "/generate-ai-avatar",
   authentication(),
-  aiAvatarService.generateAiAvatarWithCroma
+  aiAvatarService.generateAiAvatarWOCroma
 );
 router.get(
   "/listing",

@@ -7,9 +7,11 @@ import successResponse from "../../../utils/response/success.response";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
 import { exec } from "node:child_process";
 import AiAvatarModel from "../../../db/models/AiAvatar.model";
+import ffmpeg from 'fluent-ffmpeg';
+import { getWordTimestampsFromScript } from "../../video/helpers/transcription";
 
 // Load API key from environment variables
-const apiKey = process.env.HEYGEN_API_KEY;
+const apiKey = "M2Y5MDk0ZWQ1YzBiNDc2OGJjMmNlNDZiNmQ1NDk3OGMtMTc0NjAyMzU4OQ==";
 const generateVideoUrl = "https://api.heygen.com/v2/video/generate";
 const getVideoStatusUrl = "https://api.heygen.com/v1/video_status.get";
 
@@ -26,7 +28,7 @@ export const retrieveAiAvatars = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
+export const generateAiAvatarWOCroma = async ({ req, speaker, script }) => {
   if (!speaker || !script) {
     throw new Error("Missing required fields: speaker and script")
   }
@@ -60,19 +62,21 @@ export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
     });
 
     if (response.data.error) {
-      return res.status(500).json({ message: response.data.error.message });
+      // Assuming `res` is available in this scope, if this function is called from a route handler.
+      // If not, you might want to adjust how errors are returned/thrown.
+      throw new Error(response.data.error.message);
     }
 
     const videoId = response.data.data.video_id;
 
     let statusData;
     let attempts = 0;
-    const maxAttempts = 240;
+    const maxAttempts = 240; // 20 minutes (240 * 5 seconds)
     do {
       if (attempts >= maxAttempts) {
-        return res.status(500).json({ message: "Video processing timeout" });
+        throw new Error("Video processing timeout");
       }
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
 
       const statusRes = await axios.get(
         `${getVideoStatusUrl}?video_id=${videoId}`,
@@ -82,7 +86,7 @@ export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
       );
 
       if (statusRes.data.code !== 100) {
-        return res.status(500).json({ message: statusRes.data.message });
+        throw new Error(statusRes.data.message);
       }
 
       statusData = statusRes.data.data;
@@ -94,21 +98,49 @@ export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
     } while (statusData.status !== "completed");
 
     const videoUrl = statusData.video_url;
+
+    const convertToMp3 = (inputPath, outputPath) => {
+      return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+          .toFormat('mp3')
+          .on('error', (err) => {
+            console.error('Error during conversion:', err);
+            reject(err);
+          })
+          .on('end', () => {
+            console.log('Conversion finished:', outputPath);
+            resolve(outputPath);
+          })
+          .save(outputPath);
+      });
+    };
+
+    console.log(videoUrl);
+
     const timestamp = Date.now();
     const fileName = `${speaker}_${timestamp}.mp4`;
+    const mp3FileName = `${speaker}_${timestamp}.mp3`;
 
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const videosDir = path.resolve(
       __dirname,
-      "../../../../../remotion/public/videos"
+      "../../../../../renders/aiAvatars"
+    );
+    const voicesDir = path.resolve(
+      __dirname,
+      "../../../../../renders/aiAvatarsVoices"
     );
 
     if (!fs.existsSync(videosDir)) {
       fs.mkdirSync(videosDir, { recursive: true });
     }
+    if (!fs.existsSync(voicesDir)) {
+      fs.mkdirSync(voicesDir, { recursive: true });
+    }
 
-    const outputPath = path.join(videosDir, fileName);
+    const outputPath = path.join(videosDir, fileName); // This is the path for the downloaded MP4 video
+    const voiceOutputPath = path.join(voicesDir, mp3FileName); // This is the path for the extracted MP3 audio
     const outputAbsolutePath = path.resolve(outputPath);
     console.log(outputAbsolutePath);
 
@@ -125,6 +157,16 @@ export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
     });
 
     console.log(`Video saved locally at ${outputPath}`);
+
+    // Now convert the downloaded video to MP3
+    try {
+      const resultPath = await convertToMp3(outputPath, voiceOutputPath); // Corrected: outputPath as input, voiceOutputPath as output
+      console.log('MP3 file saved at:', resultPath);
+      // You can now send this MP3 to Whisper
+    } catch (err) {
+      console.error('Conversion failed:', err);
+      throw new Error("Failed to convert video to MP3"); // Re-throw to indicate failure
+    }
 
     const outputWebm = path.join(videosDir, `${speaker}_${timestamp}.webm`);
 
@@ -143,20 +185,22 @@ export const generateAiAvatarWithCroma = async ({ req, speaker, script }) => {
       );
     });
 
-    const cloudUploadResult = await cloud.uploader.upload(outputWebm, {
-      folder: `${process.env.APP_NAME}/${req.user._id}/${req.body.title}/ai-avatar-video`,
-      resource_type: "video",
-    });
+    // const cloudUploadResult = await cloud.uploader.upload(outputWebm, {
+    //   folder: `${process.env.APP_NAME}/${req.user._id}/${req.body.title}/ai-avatar-video`,
+    //   resource_type: "video",
+    // });
 
-    return {
-      videoSource: {
-        public_id: cloudUploadResult.public_id,
-        secure_url: cloudUploadResult.secure_url,
-        fileName: `${speaker}_${timestamp}.webm`,
-      }
-    };
+    const words = await getWordTimestampsFromScript(voiceOutputPath)
+    console.log(words);
+
+    const wordArray = Object.keys(words)
+      .sort((a, b) => Number(a) - Number(b)) // ensure sorted by key
+      .map(key => words[key]);
+
+
+    return { aiAvatarFile: `${speaker}_${timestamp}.webm`, aiAvatarVoiceFile: mp3FileName, wordArray };
   } catch (error) {
     console.error("Error:", error);
-    throw new Error("An error occurred while generating the video")
+    throw new Error(`An error occurred while generating the video: ${error.message}`)
   }
 };
