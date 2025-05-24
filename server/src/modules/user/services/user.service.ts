@@ -12,9 +12,39 @@ import { google } from "googleapis";
 import axios from "axios";
 
 export const getUserVideos = asyncHandler(async (req, res, next) => {
-  const videos = await VideoModel.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
-  if (!videos.length) { return next(new Error("There are no videos to display", { cause: 404 })) }
-  return successResponse({ res, status: 200, message: "User's videos retrieved successfully", data: { videos } });
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 9;
+
+  const skip = (page - 1) * limit;
+
+  try {
+    const videos = await VideoModel.find({ createdBy: req.user._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    if (!videos.length && page === 1) {
+      return next(new Error("No videos to display.", { cause: 404 }));
+    }
+
+    const totalVideos = await VideoModel.countDocuments({ createdBy: req.user._id });
+    const totalPages = Math.ceil(totalVideos / limit);
+
+    return successResponse({
+      res,
+      status: 200,
+      message: "User's videos retrieved successfully.",
+      data: {
+        videos,
+        currentPage: page,
+        totalPages,
+        totalItems: totalVideos,
+      },
+    });
+  } catch (error) {
+    // Catch any database errors
+    next(new Error(`Failed to get videos: ${error.message}`, { cause: 500 }));
+  }
 });
 
 export const renameVideoTitle = asyncHandler(async (req, res, next) => {
@@ -55,8 +85,8 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
   const user = await UserModel.findById(req.user._id).select(
     "name email aiCredits"
   );
-  const payments = await CreditPurchaseModel.find({ userId: user._id }).select(
-    "credits egpAmount paymentProvider paymentReference status -_id"
+  const payments = await CreditTransactionModel.find({ userId: user._id }).select(
+    "credits egpAmount paymentProvider paymentReference status createdAt -_id"
   );
   return successResponse({
     res,

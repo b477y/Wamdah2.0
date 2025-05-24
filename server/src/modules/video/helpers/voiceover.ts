@@ -47,7 +47,7 @@ export const createVoiceOver = async ({
       responseType: "arraybuffer",
     });
 
-    const outputDir = path.join(__dirname, "../../../../../renders");
+    const outputDir = path.join(__dirname, "../../../../../public/renders/voices");
 
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });

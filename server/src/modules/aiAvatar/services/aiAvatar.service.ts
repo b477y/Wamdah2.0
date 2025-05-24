@@ -11,7 +11,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import { getWordTimestampsFromScript } from "../../video/helpers/transcription";
 
 // Load API key from environment variables
-const apiKey = "M2Y5MDk0ZWQ1YzBiNDc2OGJjMmNlNDZiNmQ1NDk3OGMtMTc0NjAyMzU4OQ==";
+const apiKey = "ODJjZDFmY2RkMDhmNGVmNjk2ZWU3YTQwM2E3MmNjMmItMTc0ODA5NzI2Mw==";
 const generateVideoUrl = "https://api.heygen.com/v2/video/generate";
 const getVideoStatusUrl = "https://api.heygen.com/v1/video_status.get";
 
@@ -28,7 +28,7 @@ export const retrieveAiAvatars = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const generateAiAvatarWOCroma = async ({ req, speaker, script }) => {
+export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp }) => {
   if (!speaker || !script) {
     throw new Error("Missing required fields: speaker and script")
   }
@@ -59,6 +59,7 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script }) => {
         "Content-Type": "application/json",
         "X-Api-Key": apiKey,
       },
+      timeout: 3600000,
     });
 
     if (response.data.error) {
@@ -117,7 +118,6 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script }) => {
 
     console.log(videoUrl);
 
-    const timestamp = Date.now();
     const fileName = `${speaker}_${timestamp}.mp4`;
     const mp3FileName = `${speaker}_${timestamp}.mp3`;
 
@@ -125,11 +125,11 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script }) => {
     const __dirname = path.dirname(__filename);
     const videosDir = path.resolve(
       __dirname,
-      "../../../../../renders/aiAvatars"
+      "../../../../../public/renders/aiAvatars"
     );
     const voicesDir = path.resolve(
       __dirname,
-      "../../../../../renders/aiAvatarsVoices"
+      "../../../../../public/renders/voices"
     );
 
     if (!fs.existsSync(videosDir)) {

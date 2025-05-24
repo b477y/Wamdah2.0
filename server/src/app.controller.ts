@@ -98,7 +98,7 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
 
     if (job.status === "completed") {
       console.log("completed");
-      video = await VideoModel.findOne({ jobId })
+      video = await VideoModel.findOne({ jobId }).select("-thumbnailUrl")
     }
 
     res.json({

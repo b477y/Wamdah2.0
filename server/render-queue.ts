@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import uploadToCloud from "./src/modules/video/helpers/uploadToCloud";
 import VideoModel from "./src/db/models/Video.model";
+import { generateAiAvatarWOCroma } from "./src/modules/aiAvatar/services/aiAvatar.service";
 
 interface JobData {
   voiceFile: any;
@@ -68,30 +69,51 @@ export const makeRenderQueue = ({
     });
 
     try {
+
+      const outputLocation = path.join(rendersDir, `${jobId}.mp4`);
+
+      let aiAvatarResponse;
+
+      if (job.data.speaker) {
+        aiAvatarResponse = await generateAiAvatarWOCroma({
+          req: job.data.req,
+          speaker: job.data.speaker,
+          script: job.data.script,
+          timestamp: job.data.timestamp,
+        });
+        job.data.words = aiAvatarResponse.wordArray
+      }
+      console.log({ que: job.data.words });
+      console.log({ aiAvatarResponse });
+
+      // Update job.data.localFilePath
+      // job.data.localFilePath = outputLocation;
+
       const inputProps = {
         titleText: job.data.titleText,
         voiceFile: job.data.voiceFile,
+        aiAvatarFile: job.data.aiAvatarFile,
+        speaker: job.data.speaker,
+        script: job.data.script,
         words: job.data.words,
-        aiAvatarFile: job.data.aiAvatarFile
+        type: job.data.type,
+        timestamp: job.data.timestamp
       };
 
       const composition = await selectComposition({
         serveUrl,
         id: compositionId,
         inputProps,
+
       });
 
-
-      const outputLocation = path.join(rendersDir, `${jobId}.mp4`);
-
-      // Update job.data.localFilePath
-      // job.data.localFilePath = outputLocation;
-
       await renderMedia({
+        chromiumOptions: {
+          gl: "angle"
+        },
         cancelSignal,
         serveUrl,
         composition,
-        concurrency: 28,
         inputProps,
         codec: "h264",
         onProgress: (progress) => {
@@ -124,7 +146,7 @@ export const makeRenderQueue = ({
         // thumbnailUrl: thumbnailResult.secure_url,
         language: job.data.language,
         accentOrDialect: job.data.accentOrDialect,
-        voiceId: job.data.voiceResponse.voice._id,
+        ...(job.data.voiceId && { voiceId: job.data.voiceId }),
       });
 
       jobs.set(jobId, {
@@ -143,21 +165,6 @@ export const makeRenderQueue = ({
 
       // console.log("Video data saved in the database!");
 
-      // const imagePath = path.resolve(
-      //   __dirname,
-      //   "../../../../../remotion/public/images/image1.jpg"
-      // );
-
-      // const thumbnailResult = await generateAndUploadThumbnail({
-      //   req,
-      //   imagePath,
-      //   title
-      // });
-
-
-      // if (!thumbnailResult) {
-      //   next(new Error("An error occured while getting the thumbnail url"));
-      // }
     } catch (error) {
       console.error(error);
       jobs.set(jobId, {

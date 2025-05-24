@@ -5,7 +5,9 @@ import {
   useVideoConfig,
   Audio,
   staticFile,
-  Video
+  Video,
+  Sequence,
+  Img
 } from "remotion";
 import { FunctionComponent, useMemo } from "react";
 
@@ -90,20 +92,38 @@ export const isArabicText = (text: string): boolean => {
 
 export const RenderingComponent: FunctionComponent<Props> = ({
   words = [],
-  fontSize = 60,
+  fontSize = 70,
   fontFamily = "Roboto",
   textColor = "#000000",
   highlightColor = "#FF9800",
   fadeIn = true,
   fadeDuration = 0.2,
-  voiceFile = "",
-  aiAvatarFile = "",
+  voiceFile,
+  aiAvatarFile,
   borderRadius = 6,
   debug = false,
+  type,
+  assetsPath = "http://localhost:3000/public",
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const currentTime = frame / fps;
+
+
+
+  const backgroundImagePaths = [
+    `/templates/${type}/image1.jpg`,
+    `/templates/${type}/image2.jpg`,
+    `/templates/${type}/image3.jpg`,
+    `/templates/${type}/image4.jpg`,
+    `/templates/${type}/image5.jpg`,
+    `/templates/${type}/image6.jpg`,
+    `/templates/${type}/image7.jpg`,
+    `/templates/${type}/image8.jpg`,
+    `/templates/${type}/image9.jpg`,
+    `/templates/${type}/image10.jpg`,
+  ];
+
 
   // Load the selected font
   const fontLoader = loadFont(fontFamily);
@@ -111,12 +131,17 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     fontLoader();
   }
 
-  const audioPath = `http://localhost:3000/renders/${voiceFile}`;
-  const aiAvatarPath = `http://localhost:3000/renders/aiAvatars/${aiAvatarFile}`;
+  const audioPath = voiceFile
+    ? `${assetsPath}/renders/voices/${voiceFile}`
+    : null;
+  const aiAvatarPath = aiAvatarFile
+    ? `${assetsPath}/renders/aiAvatars/${aiAvatarFile}`
+    : null;
+
+  // const audioPath = voiceFile ? staticFile(`renders/voices/${voiceFile}`) : null;
+  // const aiAvatarPath = aiAvatarFile ? staticFile(`renders/aiAvatars/${aiAvatarFile}`) : null;
+
   // const  = fileName ? staticFile(`videos/${fileName}`) : null;
-
-
-
 
   const activeWord = useMemo(() => {
     return words.find(
@@ -181,7 +206,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     );
   }
 
-
+  const imageDurationInSeconds = 6;
+  const imageDurationInFrames = imageDurationInSeconds * fps;
 
   return (
     <AbsoluteFill
@@ -191,23 +217,49 @@ export const RenderingComponent: FunctionComponent<Props> = ({
         justifyContent: "flex-end", // align vertically to bottom
         alignItems: "center",       // horizontally centered
         paddingBottom: 150,          // adjust the padding as needed
+        overflow: "hidden", // Hide overflow for images
       }}
     >
+
+      {/* Background Images */}
+      {backgroundImagePaths.map((path, index) => (
+        <Sequence
+          key={path}
+          from={index * imageDurationInFrames}
+          durationInFrames={imageDurationInFrames}
+        >
+          <Img
+            src={`${assetsPath}${path}`} // <--- THIS IS THE KEY CHANGE
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 0, // Ensure images are in the background
+            }}
+          />
+        </Sequence>
+      ))}
+
       {audioPath && <Audio src={audioPath} />}
 
-      {/* Avatar Video — only if fileName is provided */}
+      {/* Avatar Video — only if aiAvatarFile is provided */}
       {aiAvatarPath && (
         <Video
           src={aiAvatarPath}
           startFrom={0}
-          muted={!!audioPath}
+          // If the AI avatar video is present, we assume it contains the primary audio.
+          // Therefore, we set muted to false to let its audio play.
+          muted={true}
           style={{
             position: "absolute",
             top: "960px",
             width: "100%",
             height: "960px",
             objectFit: "cover",
-            zIndex: 1,
+            zIndex: 2,
           }}
         />
       )}
@@ -224,6 +276,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
             whiteSpace: "nowrap",
             textAlign: isArabicText(displayWord) ? "right" : "left",
             direction: isArabicText(displayWord) ? "rtl" : "ltr",
+            position: "relative",
+            zIndex: 1,
           }}
         // aria-live="assertive"
         // aria-atomic="true"

@@ -122,6 +122,8 @@ export async function generateAndUploadThumbnail({
     streamifier.default.createReadStream(buffer).pipe(stream);
   });
 
+  console.log({result});
+
   return result;
 }
 
