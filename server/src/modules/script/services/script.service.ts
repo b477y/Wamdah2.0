@@ -74,7 +74,7 @@ Topic: "${userPrompt}"
 Language: ${language}${accentOrDialect ? ` (${accentOrDialect})` : ""}.
 
 Script Requirements:
-- Script length must be between 300 and 400 characters. This is critical.
+- Script length must be between 250 and 300 characters the script should be more than 250 character. This is critical.
 - Natural, spoken style for a short online video.
 - Conversational and friendly tone.
 - Very short, impactful sentences.

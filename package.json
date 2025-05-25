@@ -13,6 +13,7 @@
     "@remotion/cli": "4.0.305",
     "@remotion/google-fonts": "^4.0.286",
     "@remotion/layout-utils": "^4.0.305",
+    "@remotion/media-utils": "^4.0.306",
     "@remotion/renderer": "4.0.305",
     "@remotion/zod-types": "^4.0.305",
     "@revideo/renderer": "^0.10.4",

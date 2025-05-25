@@ -46,6 +46,7 @@ export const queue = makeRenderQueue({
 
 // Instant video
 export const generateVideo = asyncHandler(async (req, res, next) => {
+  const startTime = Date.now()
   const {
     title,
     generatedScript,
@@ -178,32 +179,11 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
     voiceResponse,
     scriptId,
     voiceId,
-    type
+    type,
+    startTime
   });
 
   res.status(200).json({ jobId });
-
-  const imagePath = path.resolve(
-    __dirname,
-    `../../../../../public/templates/${type}/image1.jpg`
-  );
-
-  const thumbnailResult = await generateAndUploadThumbnail({
-    req,
-    imagePath,
-    title
-  });
-
-
-  if (!thumbnailResult) {
-    next(new Error("An error occured while getting the thumbnail url"));
-  }
-
-  const video = await VideoModel.findOneAndUpdate(
-    { jobId },
-    { thumbnailUrl: thumbnailResult.secure_url },
-    { new: true }
-  );
 
   //     const cloudUploadResult = await uploadToCloud({ req, title, outputLocation })
   //     const endTime = Date.now();

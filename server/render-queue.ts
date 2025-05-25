@@ -8,6 +8,9 @@ import path from "node:path";
 import uploadToCloud from "./src/modules/video/helpers/uploadToCloud";
 import VideoModel from "./src/db/models/Video.model";
 import { generateAiAvatarWOCroma } from "./src/modules/aiAvatar/services/aiAvatar.service";
+import os from 'node:os';
+import generateAndUploadThumbnail from "./src/modules/video/helpers/generateAndUploadThumbnail.js";
+import { fileURLToPath } from "url";
 
 interface JobData {
   voiceFile: any;
@@ -89,6 +92,9 @@ export const makeRenderQueue = ({
       // Update job.data.localFilePath
       // job.data.localFilePath = outputLocation;
 
+      const assetsPath = "http://localhost:3000/public"; // <--- Corrected for port 3000 and /public directory
+
+
       const inputProps = {
         titleText: job.data.titleText,
         voiceFile: job.data.voiceFile,
@@ -97,7 +103,8 @@ export const makeRenderQueue = ({
         script: job.data.script,
         words: job.data.words,
         type: job.data.type,
-        timestamp: job.data.timestamp
+        timestamp: job.data.timestamp,
+        assetsPath: assetsPath, // <--- Pass the assetsPath
       };
 
       const composition = await selectComposition({
@@ -108,6 +115,7 @@ export const makeRenderQueue = ({
       });
 
       await renderMedia({
+        concurrency: os.cpus().length,
         chromiumOptions: {
           gl: "angle"
         },
@@ -131,10 +139,26 @@ export const makeRenderQueue = ({
       const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
       console.log(`uploaded`, cloudUploadResult);
 
-
-
       const durationInSeconds = Math.round(cloudUploadResult.duration);
       console.log(jobId);
+
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+
+      const imagePath = path.resolve(
+        __dirname,
+        `../public/templates/${job.data.type}/image1.jpg`
+      );
+
+      const thumbnailResult = await generateAndUploadThumbnail({
+        req: job.data.req,
+        imagePath,
+        title: job.data.title
+      });
+
+      if (!thumbnailResult) {
+        next(new Error("An error occured while getting the thumbnail url"));
+      }
 
       const video = await VideoModel.create({
         jobId,
@@ -143,11 +167,19 @@ export const makeRenderQueue = ({
         videoSource: cloudUploadResult,
         scriptId: job.data.scriptId,
         duration: durationInSeconds,
-        // thumbnailUrl: thumbnailResult.secure_url,
+        thumbnailUrl: thumbnailResult.secure_url,
         language: job.data.language,
         accentOrDialect: job.data.accentOrDialect,
         ...(job.data.voiceId && { voiceId: job.data.voiceId }),
       });
+      const endTime = Date.now()
+
+      const howLongItTookMs = endTime - job.data.startTime;
+      const totalSeconds = Math.floor(howLongItTookMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      console.log(`${minutes}m ${seconds}s`);
 
       jobs.set(jobId, {
         status: "completed",
