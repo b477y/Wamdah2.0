@@ -13,6 +13,19 @@ import generateAndUploadThumbnail from "./src/modules/video/helpers/generateAndU
 import { fileURLToPath } from "url";
 
 interface JobData {
+  fontFamily: any;
+  speaker: any;
+  req: any;
+  script: any;
+  timestamp: any;
+  aiAvatarFile: any;
+  type: any;
+  title: any;
+  scriptId: any;
+  language: any;
+  accentOrDialect: any;
+  voiceId: { voiceId: any; };
+  startTime: number;
   voiceFile: any;
   words: any;
   voiceoverUrl: any;
@@ -104,6 +117,7 @@ export const makeRenderQueue = ({
         words: job.data.words,
         type: job.data.type,
         timestamp: job.data.timestamp,
+        fontFamily: job.data.fontFamily,
         assetsPath: assetsPath, // <--- Pass the assetsPath
       };
 
@@ -115,7 +129,7 @@ export const makeRenderQueue = ({
       });
 
       await renderMedia({
-        concurrency: os.cpus().length,
+        concurrency: os.cpus().length - 4,
         chromiumOptions: {
           gl: "angle"
         },
@@ -135,6 +149,20 @@ export const makeRenderQueue = ({
         },
         outputLocation,
       });
+      const endTime = Date.now()
+
+      jobs.set(jobId, {
+        status: "completed",
+        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
+        data: job.data,
+      });
+
+      const howLongItTookMs = endTime - job.data.startTime;
+      const totalSeconds = Math.floor(howLongItTookMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      console.log(`${minutes}m ${seconds}s`);
 
       const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
       console.log(`uploaded`, cloudUploadResult);
@@ -144,6 +172,11 @@ export const makeRenderQueue = ({
 
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = path.dirname(__filename);
+
+      if (job.data.type == undefined) {
+        job.data.type = "advertising"
+      }
+      console.log({ type: job.data.type });
 
       const imagePath = path.resolve(
         __dirname,
@@ -171,20 +204,6 @@ export const makeRenderQueue = ({
         language: job.data.language,
         accentOrDialect: job.data.accentOrDialect,
         ...(job.data.voiceId && { voiceId: job.data.voiceId }),
-      });
-      const endTime = Date.now()
-
-      const howLongItTookMs = endTime - job.data.startTime;
-      const totalSeconds = Math.floor(howLongItTookMs / 1000);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-
-      console.log(`${minutes}m ${seconds}s`);
-
-      jobs.set(jobId, {
-        status: "completed",
-        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
-        data: job.data,
       });
 
       // if (!video) {

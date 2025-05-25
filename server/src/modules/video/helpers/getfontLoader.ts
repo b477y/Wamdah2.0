@@ -15,7 +15,7 @@ import { loadFont as loadSlabo27px } from "@remotion/google-fonts/Slabo27px";
 import { loadFont as loadABeeZee } from "@remotion/google-fonts/ABeeZee";
 import { loadFont as loadLora } from "@remotion/google-fonts/Lora";
 import { loadFont as loadAdventPro } from "@remotion/google-fonts/AdventPro";
-
+import { loadFont as loadLalezar } from "@remotion/google-fonts/Lalezar"
 export function getFontLoader(fontFamily) {
     const fontMap = {
         Amiri: loadAmiri,
@@ -35,6 +35,7 @@ export function getFontLoader(fontFamily) {
         ABeeZee: loadABeeZee,
         Lora: loadLora,
         "Advent Pro": loadAdventPro,
+        Lalezar: loadLalezar,
     };
 
     return fontMap[fontFamily];

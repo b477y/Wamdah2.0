@@ -1,30 +1,32 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 export const generateScriptWithAi = async (
   scrapedText,
-  language = "English"
+  language = "English",
+  accentOrDialect
 ) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-You are a creative ad copywriter. Create a short, engaging video voice-over script in ${language} to promote a product using the details below.
+You are an expert ad copywriter. Your goal is to create compelling, easy-to-understand voice-over scripts for video ads. The script must be perfect for text-to-speech narration, sounding natural and engaging.
 
-Rules:
-- Write short, clear sentences that can be spoken in 3 seconds.
-- Use only **one punctuation mark at the end** of each sentence — prefer a period (.) or exclamation mark (!) — but not both.
-- Avoid repeating punctuation (e.g., . . or ! .).
-- Use a natural, friendly tone as if speaking directly to the audience.
-- Avoid headings, bullet points, or line breaks.
-- Focus strictly on product-related info — ignore unrelated text like login/signup.
-- End with a strong call to action like “Get yours now!” or “Try it today!”.
-- All content should be written in ${language}.
-- Ensure the script contains at least 12-24 short sentences for a ~30s - ~60s video.
-- The sentece must include in maximum of 3 words not more than 3 words please.
+**Strict Scripting Guidelines:**
+- Every sentence must be **very short and simple**. Aim for phrases that are clear and impactful on their own.
+- Each sentence should convey **only one main idea**.
+- Maintain a **natural, friendly, and enthusiastic conversational tone**. Speak directly to the audience, as if you're talking to a friend.
+- Use only **one punctuation mark** at the end of each sentence (either a period "." or an exclamation mark "!"). Do not use any other punctuation.
+- **Avoid complex sentence structures, clauses, or unusual phrasing.** Keep the language straightforward.
+- The script should flow smoothly and naturally, making it easy for text-to-speech to deliver.
+- **Focus strictly on product features and benefits.** Ignore any irrelevant details from the provided text (like "login" or "signup").
+- Ensure the script has enough distinct sentences for a dynamic pace, feeling complete without being overly long.
+- The entire script must be in **${accentOrDialect} ${language}**.
+- Do not use headings, bullet points, numbered lists, or extra line breaks. The output must be a continuous block of text.
+- Conclude with a **strong, clear, and actionable call to action**.
 
-Product Info:
+**Product Information for the Ad:**
 ${scrapedText}
 `;
 

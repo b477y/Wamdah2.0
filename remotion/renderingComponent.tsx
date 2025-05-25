@@ -4,16 +4,14 @@ import {
   useCurrentFrame,
   useVideoConfig,
   Audio,
-  staticFile, // Potentially not needed if all assets are fetched via URL
   Video,
-  Sequence,
   Img
 } from "remotion";
 import { FunctionComponent, useMemo } from "react";
 import { CalculateMetadataFunction } from 'remotion';
 import { getAudioDurationInSeconds } from '@remotion/media-utils';
 
-// Arabic Fonts (ensure these are installed if you plan to use them dynamically)
+// Arabic Fonts
 import { loadFont as loadAmiri } from "@remotion/google-fonts/Amiri";
 import { loadFont as loadCairo } from "@remotion/google-fonts/Cairo";
 import { loadFont as loadTajawal } from "@remotion/google-fonts/Tajawal";
@@ -21,6 +19,7 @@ import { loadFont as loadLateef } from "@remotion/google-fonts/Lateef";
 import { loadFont as loadReemKufi } from "@remotion/google-fonts/ReemKufi";
 import { loadFont as loadSofia } from "@remotion/google-fonts/Sofia";
 import { loadFont as loadScheherazadeNew } from "@remotion/google-fonts/ScheherazadeNew";
+import { loadFont as loadLalezar } from "@remotion/google-fonts/Lalezar"
 
 // English Fonts
 import { loadFont as loadOpenSans } from "@remotion/google-fonts/OpenSans";
@@ -79,6 +78,7 @@ const FONT_MAP = {
   "Reem Kufi": loadReemKufi,
   Sofia: loadSofia,
   Scheherazade: loadScheherazadeNew,
+  Lalezar: loadLalezar, // Lalezar font added here
 
   // English Fonts
   "Open Sans": loadOpenSans,
@@ -103,34 +103,48 @@ export const isArabicText = (text: string): boolean => {
   return arabicPattern.test(text);
 };
 
+// --- HELPER FUNCTION FOR TEXT OUTLINE USING TEXT-SHADOW ---
+const createOutlineShadow = (thickness: number, color: string): string => {
+  let shadows: string[] = [];
+  // Loop to create shadows in all directions for desired thickness
+  for (let x = -thickness; x <= thickness; x++) {
+    for (let y = -thickness; y <= thickness; y++) {
+      if (x !== 0 || y !== 0) { // Exclude the center (0,0)
+        shadows.push(`${x}px ${y}px 0 ${color}`);
+      }
+    }
+  }
+  return shadows.join(', ');
+};
+
+
 // --- RENDERING COMPONENT ---
 export const RenderingComponent: FunctionComponent<Props> = ({
   words = [],
-  fontSize = 70,
-  fontFamily = "Roboto",
+  fontSize = 80,
+  fontFamily = "Lalezar", // Default to Lalezar as requested
   textColor = "#000000",
   highlightColor = "#FF9800",
-  // fadeIn = true,
-  // fadeDuration = 0.2,
+  // fadeIn = true, // Currently commented out, so keeping as is
+  // fadeDuration = 0.2, // Currently commented out, so keeping as is
   voiceFile,
   aiAvatarFile,
   borderRadius = 6,
-  // debug = false,
-  type, // This prop is now correctly defined in Props interface
-  assetsPath = "http://localhost:3000/public", // Default for local dev/studio
+  // debug = false, // Currently commented out, so keeping as is
+  type = "advertising",
+  assetsPath = "http://localhost:3000/public",
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig(); // Get fps and total duration from config
+  const { fps, durationInFrames } = useVideoConfig();
   const currentTime = frame / fps;
 
-  // Background Image Paths
   const backgroundImagePaths = [
     `/templates/${type}/image1.jpg`,
     `/templates/${type}/image2.jpg`,
     `/templates/${type}/image3.jpg`
-    // `/templates/${type}/image4.jpg`,
-    // `/templates/${type}/image5.jpg`,
   ];
+
+  const imageDurationInFrames = Math.floor(durationInFrames / backgroundImagePaths.length);
 
   // Load the selected font
   const fontLoader = loadFont(fontFamily);
@@ -157,49 +171,12 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     ? activeWord.punctuated_word || activeWord.word
     : "";
 
-  // Calculate fade opacity (kept for reference, currently commented out in style)
-  // const fadeOpacity = useMemo(() => {
-  //   if (!activeWord || !fadeIn) return 1;
+  // Calculate the text-shadow for the outline
+  // Adjust the '2' for outline thickness (e.g., 1 for thin, 3 for thicker)
+  const outlineThickness = 2; // You can make this a prop if you want to control it from outside
+  const outlineColor = 'black'; // You can make this a prop too
+  const outlineShadow = useMemo(() => createOutlineShadow(outlineThickness, outlineColor), [outlineThickness, outlineColor]);
 
-  //   return interpolate(
-  //     currentTime,
-  //     [
-  //       activeWord.start - fadeDuration,
-  //       activeWord.start,
-  //       activeWord.end,
-  //       activeWord.end + fadeDuration,
-  //     ],
-  //     [0, 1, 1, 0],
-  //     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  //   );
-  // }, [activeWord, currentTime, fadeIn, fadeDuration]);
-
-  // Debug information
-  // const debugInfo = debug ? (
-  //   <div style={{
-  //     position: 'absolute',
-  //     bottom: 20,
-  //     left: 20,
-  //     backgroundColor: 'rgba(0,0,0,0.7)', // Changed for better visibility
-  //     color: 'white',
-  //     padding: '10px',
-  //     borderRadius: '4px',
-  //     fontFamily: 'monospace',
-  //     fontSize: '14px',
-  //     zIndex: 100, // Ensure it's on top
-  //   }}>
-  //     <div>Frame: {frame}</div>
-  //     <div>Time: {currentTime.toFixed(2)}s</div>
-  //     <div>Comp Duration: {durationInFrames / fps}s ({durationInFrames} frames)</div>
-  //     <div>Active Word: {displayWord || 'None'}</div>
-  //     {activeWord && (
-  //       <>
-  //         <div>Start: {activeWord.start.toFixed(2)}s</div>
-  //         <div>End: {activeWord.end.toFixed(2)}s</div>
-  //       </>
-  //     )}
-  //   </div>
-  // ) : null;
 
   // Handle case where no words are provided
   if (words.length === 0) {
@@ -214,11 +191,6 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     );
   }
 
-  // Duration for each background image before it cycles to the next one
-  // This will make images cycle through the entire video duration
-  // const imageDurationInSeconds = 11;
-  // const totalImageCycleDurationInFrames = backgroundImagePaths.length * imageDurationInSeconds * fps;
-
   return (
     <AbsoluteFill
       style={{
@@ -231,39 +203,30 @@ export const RenderingComponent: FunctionComponent<Props> = ({
       }}
     >
 
-      {/* Background Images - Looping */}
+      {/* Background Images - Looping and Displaying based on calculated duration */}
       {backgroundImagePaths.map((path, index) => {
-        const imageDurationInSeconds = (durationInFrames * fps) / 3; // Ensure this matches your desired display duration for each image
-        const totalImageCycleDurationInFrames = backgroundImagePaths.length * imageDurationInSeconds * fps;
-        const startFrameOfFirstAppearance = index * imageDurationInSeconds * fps;
+        const startFrame = index * imageDurationInFrames;
+        const endFrame = (index === backgroundImagePaths.length - 1)
+          ? durationInFrames
+          : startFrame + imageDurationInFrames;
 
-        const currentCycleFrame = frame % totalImageCycleDurationInFrames;
-        const isCurrentActiveImage =
-          currentCycleFrame >= startFrameOfFirstAppearance &&
-          currentCycleFrame < startFrameOfFirstAppearance + imageDurationInSeconds * fps;
+        const isCurrentActiveImage = frame >= startFrame && frame < endFrame;
 
         return (
-          <Sequence
+          <Img
             key={path}
-            from={0}
-            durationInFrames={durationInFrames}
-          >
-            <Img
-              src={`${assetsPath}${path}`}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                zIndex: 0,
-                opacity: isCurrentActiveImage ? 1 : 0, // Show only the currently active image
-                // REMOVE OR COMMENT OUT THIS LINE TO ELIMINATE THE TRANSITION
-                // transition: isCurrentActiveImage ? 'opacity 0.5s ease-in-out' : 'none',
-              }}
-            />
-          </Sequence>
+            src={`${assetsPath}${path}`}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 0,
+              opacity: isCurrentActiveImage ? 1 : 0,
+            }}
+          />
         );
       })}
 
@@ -275,13 +238,10 @@ export const RenderingComponent: FunctionComponent<Props> = ({
         <Video
           src={aiAvatarPath}
           startFrom={0}
-          // The AI avatar video typically contains the primary audio, so setting muted to true
-          // to avoid double audio if voiceFile is also present and intended for separate playback.
-          // If the AI avatar is meant to be the *only* audio source, ensure voiceFile is null or absent.
-          muted={true} // Set to false if you want the avatar video's audio to play
+          muted={true}
           style={{
             position: "absolute",
-            top: "960px", // Example position, adjust as needed
+            top: "960px",
             width: "100%",
             height: "960px",
             objectFit: "cover",
@@ -296,9 +256,8 @@ export const RenderingComponent: FunctionComponent<Props> = ({
           style={{
             fontSize,
             fontFamily,
-            color: highlightColor, // Use highlight color for the active word
-            // opacity: fadeOpacity, // Uncomment if you want fade effect for the word
-            // transition: "opacity 0.1s linear", // Add a subtle transition if opacity is used
+            color: highlightColor, // Use highlight color for the active word fill
+            textShadow: outlineShadow, // <--- Apply the dynamically generated text-shadow outline
             borderRadius,
             whiteSpace: "nowrap",
             textAlign: isArabicText(displayWord) ? "right" : "left",
@@ -314,21 +273,19 @@ export const RenderingComponent: FunctionComponent<Props> = ({
         <span style={{ visibility: "hidden", fontSize: fontSize }}>Placeholder</span>
       )}
 
-      {/* {debugInfo} */}
     </AbsoluteFill>
   );
 };
 
 // --- CALCULATE METADATA ---
 export const calculateMetadata: CalculateMetadataFunction<Props> = async ({
-  props, // The inputProps from the backend (or defaultProps from Root.tsx)
+  props,
 }) => {
-  const fps = 30; // Define your desired frames per second
+  const fps = 30;
 
-  // Construct the full URL to the audio file using assetsPath from props
   const audioPath = props.voiceFile
     ? `${props.assetsPath}/renders/voices/${props.voiceFile}`
-    : null; // If no voiceFile is provided, audioPath will be null
+    : null;
 
   let audioDurationInSeconds = 0;
   try {
@@ -336,29 +293,21 @@ export const calculateMetadata: CalculateMetadataFunction<Props> = async ({
       audioDurationInSeconds = await getAudioDurationInSeconds(audioPath);
     } else {
       console.warn("No voiceFile provided, video duration will be 0.");
-      // You might want a minimum duration if no audio is present
-      // audioDurationInSeconds = props.words.length > 0 ? (props.words[props.words.length - 1]?.end || 5) : 5; // Example fallback duration
-      audioDurationInSeconds = 5; // A reasonable default if no audio
+      audioDurationInSeconds = 5;
     }
   } catch (error) {
     console.error(`Error getting audio duration for ${audioPath}:`, error);
-    // Fallback duration in case of an error fetching audio
-    audioDurationInSeconds = 5; // Or throw error, depending on desired behavior
+    audioDurationInSeconds = 5;
   }
 
-
-  // Convert duration to frames
   const durationInFrames = Math.floor(audioDurationInSeconds * fps);
-
-  // Ensure minimum duration if required, e.g., for very short audio or no audio
-  const minDurationFrames = 1 * fps; // 1 second minimum
+  const minDurationFrames = 1 * fps;
   const finalDurationInFrames = Math.max(durationInFrames, minDurationFrames);
-
 
   return {
     durationInFrames: finalDurationInFrames,
     fps: fps,
-    width: 1080, // Set your desired video width
-    height: 1920, // Set your desired video height
+    width: 1080,
+    height: 1920,
   };
 };

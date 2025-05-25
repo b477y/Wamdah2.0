@@ -7,7 +7,7 @@ import { renderMedia, getCompositions } from "@remotion/renderer";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
 import VideoModel from "../../../db/models/Video.model";
 import { generateScriptUsingGimini } from "../helpers/generateScriptUsingGimini";
-import { createVoiceOver } from "../helpers/voiceover";
+import { createVoiceOver, elevenLabsVoiceOver } from "../helpers/voiceover";
 import splitText from "../helpers/splitText";
 import { generateAiAvatarWOCroma } from "../../aiAvatar/services/aiAvatar.service";
 import generateScript4Product from "../helpers/generateScript4Product";
@@ -103,15 +103,19 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
   // try {
   // console.log("Generating Voiceover...");
-  const voiceResponse = await createVoiceOver({
+  const voiceResponse = await elevenLabsVoiceOver({
     req,
-    title,
     scriptText: content,
-    reference_id: referenceId,
-    scriptId,
-    language,
-    accentOrDialect,
   });
+  // const voiceResponse = await createVoiceOver({
+  //   req,
+  //   title,
+  //   scriptText: content,
+  //   reference_id: referenceId,
+  //   scriptId,
+  //   language,
+  //   accentOrDialect,
+  // });
 
   const voiceId = voiceResponse.voice._id;
 
@@ -140,9 +144,9 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
   // const totalFrames = sentences.length * framesPerSentence;
   // const fontSize = req.body.fontSize || 80;
   // const color = req.body.color || "white";
-  // const fontFamily = req.body.fontFamily || "Cairo";
-  // const fontLoader = getFontLoader(fontFamily);
-  // const { fontFamily: selectedFont } = await fontLoader();
+  const fontFamily = "Lalezar";
+  const fontLoader = getFontLoader(fontFamily);
+  const { fontFamily: selectedFont } = await fontLoader();
 
   // const bundled = await bundle(indexPath);
   // const compositions = await getCompositions(bundled, {
@@ -180,7 +184,8 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
     scriptId,
     voiceId,
     type,
-    startTime
+    startTime,
+    fontFamily
   });
 
   res.status(200).json({ jobId });
@@ -247,6 +252,7 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
 // AI Spoke person
 export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
+  const startTime = Date.now()
   const {
     title,
     generatedScript,
@@ -321,32 +327,33 @@ export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
     aiAvatarFile,
     voiceFile: aiAvatarVoiceFile,
     type,
-    words: ["words"]
+    words: ["words"],
+    startTime
   });
 
   res.status(200).json({ jobId });
 
-  const imagePath = path.resolve(
-    __dirname,
-    `../../../../../public/templates/${type}/image1.jpg`
-  );
+  // const imagePath = path.resolve(
+  //   __dirname,
+  //   `../../../../../public/templates/${type}/image1.jpg`
+  // );
 
-  const thumbnailResult = await generateAndUploadThumbnail({
-    req,
-    imagePath,
-    title
-  });
+  // const thumbnailResult = await generateAndUploadThumbnail({
+  //   req,
+  //   imagePath,
+  //   title
+  // });
 
 
-  if (!thumbnailResult) {
-    next(new Error("An error occured while getting the thumbnail url"));
-  }
+  // if (!thumbnailResult) {
+  //   next(new Error("An error occured while getting the thumbnail url"));
+  // }
 
-  const video = await VideoModel.findOneAndUpdate(
-    { jobId: jobId },
-    { thumbnailUrl: thumbnailResult.secure_url },
-    { new: true }
-  );
+  // const video = await VideoModel.findOneAndUpdate(
+  //   { jobId: jobId },
+  //   { thumbnailUrl: thumbnailResult.secure_url },
+  //   { new: true }
+  // );
 
   // console.log(aiAvatarResponse.videoSource.secure_url);
   // console.log(aiAvatarResponse.aiAvatarFile);
@@ -462,8 +469,29 @@ export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
 
 // Ad video
 export const generateAdVideo = asyncHandler(async (req, res, next) => {
-  const { url, language, accentOrDialect } = req.body;
-  const framesPerSentence = calculateFrames(accentOrDialect);
+  const startTime = Date.now()
+  const { title, url, customScript, generatedScript, language, accentOrDialect } = req.body;
+  // const framesPerSentence = calculateFrames(accentOrDialect);
+  const type = "advertising"
+  let generatedByAi = false;
+  let content = "";
+
+  if (generatedScript) {
+    content = generatedScript;
+    generatedByAi = true;
+  } else if (customScript) {
+    content = customScript;
+  } else {
+    return res.status(400).json({ error: "No script content provided." });
+  }
+
+  const script = await ScriptModel.create({
+    title,
+    content,
+    createdBy: req.user._id,
+    generatedByAi,
+  });
+
   const { referenceId } = await VoiceActorModel.findOne({
     language,
     accentOrDialect,
@@ -472,162 +500,214 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
     next(new Error("Failed to find voiceover actor with selected options"));
   }
 
-  try {
-    console.log("Generating Script...");
+  const scriptId = script._id || "";
+  // const title = scriptResponse.title || "";
 
-    const scriptResponse = await generateScript4Product({ req, url, language });
-    if (
-      !scriptResponse.script ||
-      !scriptResponse.scriptId ||
-      !scriptResponse.title
-    ) {
-      throw new Error(
-        "Failed to generate script. API returned invalid response.",
-      );
-    }
+  const voiceResponse = await createVoiceOver({
+    req,
+    title,
+    scriptText: content,
+    reference_id: referenceId,
+    scriptId,
+    language,
+    accentOrDialect,
+  });
 
-    const script = scriptResponse.script || "";
-    const scriptId = scriptResponse.scriptId || "";
-    const title = scriptResponse.title || "";
+  const voiceId = voiceResponse.voice._id;
 
-    console.log("Formatted script:", script);
-
-    try {
-      console.log("Generating Voiceover...");
-
-      const voiceResponse = await createVoiceOver({
-        req,
-        title,
-        scriptText: script,
-        scriptId,
-        language,
-        accentOrDialect,
-        reference_id: referenceId,
-      });
-
-      if (!voiceResponse.voice.voiceSource.secure_url) {
-        next(
-          new Error(
-            "Failed to generate voiceover correctly and upload it correctly",
-          ),
-        );
-      }
-
-      const voiceoverUrl = voiceResponse.voice.voiceSource.secure_url || null;
-
-      const sentences = splitText(script);
-
-      console.log("Sentences to render:", sentences);
-
-      const totalFrames = sentences.length * framesPerSentence;
-
-      const fontSize = req.body.fontSize || 80;
-      const color = req.body.color || "white";
-      const fontFamily = req.body.fontFamily || "Cairo";
-
-      console.log(fontFamily);
-
-      const fontLoader = getFontLoader(fontFamily);
-      const { fontFamily: selectedFont } = await fontLoader();
-      console.log(selectedFont);
-
-      console.log(`Bundling project from: ${indexPath}`);
-      const bundled = await bundle(indexPath);
-
-      const compositions = await getCompositions(bundled, {
-        inputProps: {
-          sentences,
-          fontSize,
-          color,
-          fontFamily,
-          voiceoverUrl,
-          framesPerSentence,
-        },
-      });
-
-      const composition = compositions.find((c) => c.id === "MyVideo");
-
-      if (!composition) {
-        next(new Error("Composition 'MyVideo' not found!"));
-      }
-
-      console.log("Composition found. Rendering video...");
-
-      const outputLocation = `./ output / video - ${Date.now()}.mp4`;
-
-      await renderMedia({
-        concurrency: 1,
-        timeoutInMilliseconds: 60000, // set to 1 minute
-        composition: {
-          ...composition,
-          durationInFrames: totalFrames,
-        },
-        serveUrl: bundled,
-        codec: "h264",
-        outputLocation,
-        inputProps: {
-          sentences,
-          fontSize,
-          color,
-          fontFamily,
-          voiceoverUrl,
-          framesPerSentence,
-        },
-      });
-
-      console.log("Video rendering completed!");
-
-      const cloudUploadResult = await uploadToCloud({
-        req,
-        title,
-        outputLocation,
-      });
-      const durationInSeconds = Math.round(cloudUploadResult.duration);
-
-      console.log("Video uploading completed!");
-
-      const imagePath = path.resolve(
-        __dirname,
-        "../../../../../remotion/public/images/image1.jpg",
-      );
-
-      const thumbnailResult = await generateAndUploadThumbnail({
-        req,
-        imagePath,
-        title,
-      });
-
-      if (!thumbnailResult) {
-        next(new Error("An error occured while getting the thumbnail url"));
-      }
-
-      const video = await VideoModel.create({
-        createdBy: req.user._id,
-        title,
-        videoSource: cloudUploadResult,
-        scriptId,
-        duration: durationInSeconds,
-        thumbnailUrl: thumbnailResult.secure_url,
-        language,
-        accentOrDialect,
-        voiceId: voiceResponse.voice._id,
-      });
-
-      console.log("Video data saved in the database!");
-
-      return successResponse({
-        res,
-        status: 201,
-        message: "Video created successfully",
-        data: { video },
-      });
-    } catch (error) {
-      console.error("Error generating video:", error);
-      res.status(500).json({ error: "Video generation failed." });
-    }
-  } catch (error) {
-    console.error("Error generating voiceover:", error);
-    res.status(500).json({ error: "Voiceover generation failed." });
+  if (!voiceResponse.outputFilePath) {
+    next(
+      new Error(
+        "Failed to generate voiceover correctly and upload it correctly",
+      ),
+    );
   }
-  res.status(500).json({ error: "Video generation failed." });
+
+  const localFilePath = voiceResponse.outputFilePath || null;
+
+  // console.log("Voiceover URL:", voiceoverUrl);
+  console.log(localFilePath);
+  const voiceFile = path.basename(voiceResponse.outputFilePath);
+
+  const words = await getWordTimestampsFromScript(localFilePath);
+  console.log(words);
+
+  const wordArray = Object.keys(words)
+    .sort((a, b) => Number(a) - Number(b)) // ensure sorted by key
+    .map((key) => words[key]);
+
+  const jobId = queue.createJob({
+    titleText: req.body.titleText,
+    type: "advertising",
+    words: wordArray,
+    voiceFile,
+    title,
+    localFilePath,
+    req,
+    voiceResponse,
+    scriptId,
+    voiceId,
+    startTime
+  });
+
+  res.status(200).json({ jobId });
+
+  // try {
+  // console.log("Generating Script...");
+
+  // const scriptResponse = await generateScript4Product({ req, url, language });
+  // if (
+  //   !scriptResponse.script ||
+  //   !scriptResponse.scriptId ||
+  //   !scriptResponse.title
+  // ) {
+  //   throw new Error(
+  //     "Failed to generate script. API returned invalid response.",
+  //   );
+  // }
+
+  // const script = scriptResponse.script || "";
+  // const scriptId = scriptResponse.scriptId || "";
+  // const title = scriptResponse.title || "";
+
+  // console.log("Formatted script:", script);
+
+  // try {
+  // console.log("Generating Voiceover...");
+
+  // const voiceResponse = await createVoiceOver({
+  //   req,
+  //   title,
+  //   scriptText: script,
+  //   scriptId,
+  //   language,
+  //   accentOrDialect,
+  //   reference_id: referenceId,
+  // });
+
+  // if (!voiceResponse.voice.voiceSource.secure_url) {
+  //   next(
+  //     new Error(
+  //       "Failed to generate voiceover correctly and upload it correctly",
+  //     ),
+  //   );
+  // }
+
+  // const voiceoverUrl = voiceResponse.voice.voiceSource.secure_url || null;
+
+  // const sentences = splitText(script);
+
+  // console.log("Sentences to render:", sentences);
+
+  // const totalFrames = sentences.length * framesPerSentence;
+
+  // const fontSize = req.body.fontSize || 80;
+  // const color = req.body.color || "white";
+  // const fontFamily = req.body.fontFamily || "Cairo";
+
+  // console.log(fontFamily);
+
+  // const fontLoader = getFontLoader(fontFamily);
+  // const { fontFamily: selectedFont } = await fontLoader();
+  // console.log(selectedFont);
+
+  // console.log(`Bundling project from: ${indexPath}`);
+  // const bundled = await bundle(indexPath);
+
+  // const compositions = await getCompositions(bundled, {
+  //   inputProps: {
+  //     sentences,
+  //     fontSize,
+  //     color,
+  //     fontFamily,
+  //     voiceoverUrl,
+  //     framesPerSentence,
+  //   },
+  // });
+
+  // const composition = compositions.find((c) => c.id === "MyVideo");
+
+  // if (!composition) {
+  //   next(new Error("Composition 'MyVideo' not found!"));
+  // }
+
+  // console.log("Composition found. Rendering video...");
+
+  // const outputLocation = `./ output / video - ${Date.now()}.mp4`;
+
+  // await renderMedia({
+  //   concurrency: 1,
+  //   timeoutInMilliseconds: 60000, // set to 1 minute
+  //   composition: {
+  //     ...composition,
+  //     durationInFrames: totalFrames,
+  //   },
+  //   serveUrl: bundled,
+  //   codec: "h264",
+  //   outputLocation,
+  //   inputProps: {
+  //     sentences,
+  //     fontSize,
+  //     color,
+  //     fontFamily,
+  //     voiceoverUrl,
+  //     framesPerSentence,
+  //   },
+  // });
+
+  // console.log("Video rendering completed!");
+
+  // const cloudUploadResult = await uploadToCloud({
+  //   req,
+  //   title,
+  //   outputLocation,
+  // });
+  // const durationInSeconds = Math.round(cloudUploadResult.duration);
+
+  // console.log("Video uploading completed!");
+
+  // const imagePath = path.resolve(
+  //   __dirname,
+  //   "../../../../../remotion/public/images/image1.jpg",
+  // );
+
+  // const thumbnailResult = await generateAndUploadThumbnail({
+  //   req,
+  //   imagePath,
+  //   title,
+  // });
+
+  // if (!thumbnailResult) {
+  //   next(new Error("An error occured while getting the thumbnail url"));
+  // }
+
+  // const video = await VideoModel.create({
+  //   createdBy: req.user._id,
+  //   title,
+  //   videoSource: cloudUploadResult,
+  //   scriptId,
+  //   duration: durationInSeconds,
+  //   thumbnailUrl: thumbnailResult.secure_url,
+  //   language,
+  //   accentOrDialect,
+  //   voiceId: voiceResponse.voice._id,
+  // });
+
+  // console.log("Video data saved in the database!");
+
+  // return successResponse({
+  //   res,
+  //   status: 201,
+  //   message: "Video created successfully",
+  //   data: { video },
+  // });
+  // } catch (error) {
+  // console.error("Error generating video:", error);
+  // res.status(500).json({ error: "Video generation failed." });
+  // }
+  // } catch (error) {
+  // console.error("Error generating voiceover:", error);
+  // res.status(500).json({ error: "Voiceover generation failed." });
+  // }
+  // res.status(500).json({ error: "Video generation failed." });
 });

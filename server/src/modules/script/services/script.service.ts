@@ -9,12 +9,12 @@ import searchImages from "../../../utils/imagesCollector/imagesCollector";
 const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 export const generateScript4Product = asyncHandler(async (req, res, next) => {
-  const { url, language } = req.body;
+  const { url, language,accentOrDialect } = req.body;
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const scrapedText = await scrapeText(url);
 
-  const generatedScript = await generateScriptWithAi(scrapedText, language);
+  const generatedScript = await generateScriptWithAi(scrapedText, language,accentOrDialect);
 
   const keywordPrompt = `
 The following is a video script:
@@ -42,7 +42,7 @@ Task:
   // });
 
   // Use keyword to fetch related images
-  // await searchImages(keyword);
+  await searchImages(keyword);
 
   // Send response
   return successResponse({
@@ -57,9 +57,10 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
   const { type, userPrompt, language, accentOrDialect } = req.body;
   // Refined typePrompts for conciseness and video focus
   const typePrompts = {
-    motivational: `Create a short, powerful motivational video script. Inspire action or a shift in perspective. Focus on a core message.`,
-    educational: `Create a short, clear educational video script. Explain the main topic simply. Focus on one key takeaway.`,
-    tech: `Create a short, engaging tech video script. Simplify a complex tech idea. Make it easily understandable and intriguing.`,
+    motivational: `Craft a powerful motivational video script designed to inspire immediate action or a significant shift in perspective. The script should focus on one core message, using compelling language to evoke emotion and encourage a positive change. Consider including a clear call to action.`,
+    educational: `Develop a concise and clear educational video script that explains a specific topic simply and effectively. The goal is for the viewer to grasp one key takeaway by the end. The script should break down complex information, use relatable examples, and maintain an engaging tone throughout.`,
+    tech: `Create a dynamic and easy-to-understand tech video script that simplifies a complex technological concept or product. The script should make the idea easily digestible, intriguing, and relevant to a broad audience. Focus on demonstrating a practical benefit or solving a common problem.`,
+    nutrition: `Write an engaging and informative nutrition video script that offers practical advice or debunks a common myth. The script should simplify nutritional information, making it accessible and actionable for viewers. Focus on one clear, actionable tip or insight that promotes healthier eating habits.`,
   };
 
   const typeInstruction = typePrompts[type];
@@ -77,7 +78,6 @@ Script Requirements:
 - Script length must be between 250 and 300 characters the script should be more than 250 character. This is critical.
 - Natural, spoken style for a short online video.
 - Conversational and friendly tone.
-- Very short, impactful sentences.
 - Avoid jargon.
 - No formatting (plain text only).
 - End with a strong, memorable final sentence (e.g., call to action, key thought, or summary).

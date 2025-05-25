@@ -19,10 +19,10 @@ const uploadToCloud = async ({ req, title, localFilePath }) => {
         console.log("✅ Video upload completed!");
 
         // Async deletion, logging any error but not failing upload because of it
-        fs.unlink(localFilePath, (err) => {
-          if (err) console.warn("Failed to delete local video file:", err);
-          else console.log("Deleted local file:", localFilePath);
-        });
+        // fs.unlink(localFilePath, (err) => {
+        //   if (err) console.warn("Failed to delete local video file:", err);
+        //   else console.log("Deleted local file:", localFilePath);
+        // });
 
         resolve(result); // <-- result contains secure_url, public_id, etc.
       }

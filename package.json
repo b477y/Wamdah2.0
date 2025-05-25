@@ -1,13 +1,14 @@
 {
-  "name": "my-video",
+  "name": "Wamdah2.0",
   "version": "1.0.0",
-  "description": "My Remotion video",
+  "description": "Wamdah 2.0 is an AI-powered video automation platform built with Remotion. It generates videos from user input or URLs using AI-generated scripts, voiceovers, and avatars, with direct upload to YouTube. A FastAPI backend hosts the Whisper model for speech-to-text processing, exposing endpoints consumed by the Node.js server to streamline the video creation pipeline.",
   "type": "module",
   "repository": {},
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
     "@deepgram/sdk": "^4.2.0",
+    "@elevenlabs/elevenlabs-js": "^2.1.0",
     "@google/generative-ai": "^0.24.1",
     "@remotion/bundler": "4.0.305",
     "@remotion/cli": "4.0.305",

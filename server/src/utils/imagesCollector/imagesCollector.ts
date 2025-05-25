@@ -9,12 +9,12 @@ const __dirname = path.dirname(__filename);
 
 const downloadDir = path.resolve(
   __dirname,
-  "../../../../remotion/public/images"
+  "../../../../public/templates/advertising"
 );
 
 // Retrieve API Key and CSE ID from environment variables
-const apiKey = process.env.CUSTOM_SEARCH_ENGINE_API_KEY;
-const cx = process.env.CUSTOM_SEARCH_ENGINE_CX;
+const apiKey = "AIzaSyAaPc4cykhygzRHC4qA0m0_mGPh0hVawJk";
+const cx = "17a45a2b0e6794aa3";
 
 const searchImages = async (query) => {
   const url = `https://www.googleapis.com/customsearch/v1?q=${query}&searchType=image&key=${apiKey}&cx=${cx}`;
@@ -36,8 +36,8 @@ const searchImages = async (query) => {
     let successfulDownloads = 0;
     let imageIndex = 0;
 
-    // Keep trying to download images until we have 20 successful ones
-    while (successfulDownloads < 20) {
+    // Keep trying to download images until we have 3 successful ones
+    while (successfulDownloads < 3) {
       // If there are no more images to check in the response, fetch more
       if (imageIndex >= images.length) {
         console.log("Fetching more images...");
