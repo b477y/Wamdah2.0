@@ -88,96 +88,95 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
   });
 
   // Endpoint to get a job status
-  // app.get("/renders/:jobId", async (req, res) => {
-  //   const jobId = req.params.jobId;
-  //   const host = req.headers.host; // gets the domain and port
-  //   const protocol = req.protocol; // gets 'http' or 'https'
-  //   const job = queue.jobs.get(jobId);
-
-  //   if (!job) {
-  //     return res.status(404).json({ error: "Invalid JobId" });
-  //   }
-
-  //   let videoUrl;
-
-  //   if (job.status === "completed") {
-  //     console.log("completed");
-  //     videoUrl = `${protocol}://${host}/renders/${jobId}.mp4`;
-  //   }
-
-  //   res.json({
-  //     status: job.status,
-  //     progress: job.progress,
-  //     videoUrl
-  //   });
-  // });
   app.get("/renders/:jobId", async (req, res) => {
     const jobId = req.params.jobId;
-    const job = queue.jobs.get(jobId); // Access your queue instance from app.locals
+    const job = queue.jobs.get(jobId);
 
     if (!job) {
       return res.status(404).json({ error: "Invalid JobId" });
     }
 
+    let video;
+
     if (job.status === "completed") {
-      console.log(`Job ${jobId} status is 'completed'. Attempting to stream video.`);
-      const filePath = path.join(rendersDir, `${jobId}.mp4`);
-
-      try {
-        // Check if the file actually exists on disk using fsPromises.access
-        await fsPromises.access(filePath); // <-- FIX: Use fsPromises.access here
-
-        // Set headers for video streaming
-        res.setHeader('Content-Type', 'video/mp4'); // Crucial for video players
-        res.setHeader('Accept-Ranges', 'bytes');    // Enables seeking/scrubbing in video players
-        // res.setHeader('Content-Disposition', 'inline'); // Optional: suggests displaying inline
-
-        // Stream the file directly to the client using fs.createReadStream
-        const fileStream = fs.createReadStream(filePath); // <-- FIX: Use fs.createReadStream here
-        fileStream.pipe(res);
-
-        fileStream.on('error', (streamErr) => {
-          console.error(`Error streaming file ${filePath} for job ${jobId}:`, streamErr);
-          if (!res.headersSent) { // Prevent setting headers if already sent
-            res.status(500).send('Error streaming video.');
-          }
-        });
-
-        console.log(`Streaming video for job ${jobId} from ${filePath}`);
-
-      } catch (error) {
-        console.error(`Video file not found or streaming error for job ${jobId}:`, error);
-        // If the file is not found (e.g., deleted after cloud upload), or a streaming error occurs,
-        // return a JSON error status.
-        if (!res.headersSent) {
-          res.status(404).json({
-            status: "failed", // Or a more specific status like 'video_unavailable'
-            error: "Video file not found or an error occurred during streaming.",
-            jobId: jobId, // Include jobId for context
-          });
-        }
-      }
-    } else {
-      // If the job is not 'completed' (i.e., 'queued' or 'in-progress'),
-      // return JSON status with progress.
-
-      // Filter out 'req' from job.data to avoid sending sensitive info to the client
-      // const { req: _, ...dataForClient } = job.data;
-
-      // Construct and provide the videoUrl here
-      const host = req.headers.host;
-      const protocol = req.protocol;
-      const videoUrl = `${protocol}://${host}/renders/${jobId}`; // This endpoint IS the video URL
-
-      res.json({
-        status: job.status,
-        progress: job.status === "in-progress" ? job.progress : undefined, // Only send progress if applicable
-        videoUrl: videoUrl, // Now the video URL is correctly provided
-        // data: dataForClient, // Include cleaned job data
-      });
-      console.log(`Job ${jobId} status is '${job.status}'. Returning JSON status with future video URL.`);
+      console.log("completed");
+      video = await VideoModel.findOne({ jobId }).select("-thumbnailUrl")
     }
+
+    res.json({
+      status: job.status,
+      progress: job.progress,
+      video
+    });
   });
+
+  // app.get("/renders/:jobId", async (req, res) => {
+  //   const jobId = req.params.jobId;
+  //   const job = queue.jobs.get(jobId); // Access your queue instance from app.locals
+
+  //   if (!job) {
+  //     return res.status(404).json({ error: "Invalid JobId" });
+  //   }
+
+  //   if (job.status === "completed") {
+  //     console.log(`Job ${jobId} status is 'completed'. Attempting to stream video.`);
+  //     const filePath = path.join(rendersDir, `${jobId}.mp4`);
+
+  //     try {
+  //       // Check if the file actually exists on disk using fsPromises.access
+  //       await fsPromises.access(filePath); // <-- FIX: Use fsPromises.access here
+
+  //       // Set headers for video streaming
+  //       res.setHeader('Content-Type', 'video/mp4'); // Crucial for video players
+  //       res.setHeader('Accept-Ranges', 'bytes');    // Enables seeking/scrubbing in video players
+  //       // res.setHeader('Content-Disposition', 'inline'); // Optional: suggests displaying inline
+
+  //       // Stream the file directly to the client using fs.createReadStream
+  //       const fileStream = fs.createReadStream(filePath); // <-- FIX: Use fs.createReadStream here
+  //       fileStream.pipe(res);
+
+  //       fileStream.on('error', (streamErr) => {
+  //         console.error(`Error streaming file ${filePath} for job ${jobId}:`, streamErr);
+  //         if (!res.headersSent) { // Prevent setting headers if already sent
+  //           res.status(500).send('Error streaming video.');
+  //         }
+  //       });
+
+  //       console.log(`Streaming video for job ${jobId} from ${filePath}`);
+
+  //     } catch (error) {
+  //       console.error(`Video file not found or streaming error for job ${jobId}:`, error);
+  //       // If the file is not found (e.g., deleted after cloud upload), or a streaming error occurs,
+  //       // return a JSON error status.
+  //       if (!res.headersSent) {
+  //         res.status(404).json({
+  //           status: "failed", // Or a more specific status like 'video_unavailable'
+  //           error: "Video file not found or an error occurred during streaming.",
+  //           jobId: jobId, // Include jobId for context
+  //         });
+  //       }
+  //     }
+  //   } else {
+  //     // If the job is not 'completed' (i.e., 'queued' or 'in-progress'),
+  //     // return JSON status with progress.
+
+  //     // Filter out 'req' from job.data to avoid sending sensitive info to the client
+  //     // const { req: _, ...dataForClient } = job.data;
+
+  //     // Construct and provide the videoUrl here
+  //     const host = req.headers.host;
+  //     const protocol = req.protocol;
+  //     const videoUrl = `${protocol}://${host}/renders/${jobId}`; // This endpoint IS the video URL
+
+  //     res.json({
+  //       status: job.status,
+  //       progress: job.status === "in-progress" ? job.progress : undefined, // Only send progress if applicable
+  //       videoUrl: videoUrl, // Now the video URL is correctly provided
+  //       // data: dataForClient, // Include cleaned job data
+  //     });
+  //     console.log(`Job ${jobId} status is '${job.status}'. Returning JSON status with future video URL.`);
+  //   }
+  // });
 
 
   app.use("/videos", express.static(path.join(__dirname, "../videos")));

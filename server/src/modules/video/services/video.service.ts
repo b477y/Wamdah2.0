@@ -503,14 +503,19 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
   const scriptId = script._id || "";
   // const title = scriptResponse.title || "";
 
-  const voiceResponse = await createVoiceOver({
+  // const voiceResponse = await createVoiceOver({
+  //   req,
+  //   title,
+  //   scriptText: content,
+  //   reference_id: referenceId,
+  //   scriptId,
+  //   language,
+  //   accentOrDialect,
+  // });
+
+  const voiceResponse = await elevenLabsVoiceOver({
     req,
-    title,
     scriptText: content,
-    reference_id: referenceId,
-    scriptId,
-    language,
-    accentOrDialect,
   });
 
   const voiceId = voiceResponse.voice._id;
@@ -536,6 +541,10 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
     .sort((a, b) => Number(a) - Number(b)) // ensure sorted by key
     .map((key) => words[key]);
 
+  const fontFamily = "Lalezar";
+  const fontLoader = getFontLoader(fontFamily);
+  const { fontFamily: selectedFont } = await fontLoader();
+
   const jobId = queue.createJob({
     titleText: req.body.titleText,
     type: "advertising",
@@ -547,7 +556,8 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
     voiceResponse,
     scriptId,
     voiceId,
-    startTime
+    startTime,
+    fontFamily
   });
 
   res.status(200).json({ jobId });

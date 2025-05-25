@@ -149,13 +149,27 @@ export const makeRenderQueue = ({
         },
         outputLocation,
       });
-      const endTime = Date.now()
 
-      jobs.set(jobId, {
-        status: "completed",
-        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
-        data: job.data,
+      const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
+      console.log(`uploaded`, cloudUploadResult);
+
+      const durationInSeconds = Math.round(cloudUploadResult.duration);
+      console.log(jobId);
+
+      const video = await VideoModel.create({
+        jobId,
+        createdBy: job.data.req.user._id,
+        title: job.data.title,
+        videoSource: cloudUploadResult,
+        scriptId: job.data.scriptId,
+        duration: durationInSeconds,
+        // thumbnailUrl: thumbnailResult.secure_url,
+        language: job.data.language,
+        accentOrDialect: job.data.accentOrDialect,
+        ...(job.data.voiceId && { voiceId: job.data.voiceId }),
       });
+
+      const endTime = Date.now()
 
       const howLongItTookMs = endTime - job.data.startTime;
       const totalSeconds = Math.floor(howLongItTookMs / 1000);
@@ -164,11 +178,11 @@ export const makeRenderQueue = ({
 
       console.log(`${minutes}m ${seconds}s`);
 
-      const cloudUploadResult = await uploadToCloud({ req: job.data.req, title: job.data.title, localFilePath: outputLocation })
-      console.log(`uploaded`, cloudUploadResult);
-
-      const durationInSeconds = Math.round(cloudUploadResult.duration);
-      console.log(jobId);
+      jobs.set(jobId, {
+        status: "completed",
+        videoUrl: `http://localhost:${port}/renders/${jobId}.mp4`,
+        data: job.data,
+      });
 
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = path.dirname(__filename);
@@ -193,18 +207,11 @@ export const makeRenderQueue = ({
         next(new Error("An error occured while getting the thumbnail url"));
       }
 
-      const video = await VideoModel.create({
-        jobId,
-        createdBy: job.data.req.user._id,
-        title: job.data.title,
-        videoSource: cloudUploadResult,
-        scriptId: job.data.scriptId,
-        duration: durationInSeconds,
-        thumbnailUrl: thumbnailResult.secure_url,
-        language: job.data.language,
-        accentOrDialect: job.data.accentOrDialect,
-        ...(job.data.voiceId && { voiceId: job.data.voiceId }),
-      });
+
+
+
+      video.thumbnailUrl = thumbnailResult.secure_url;
+      await video.save()
 
       // if (!video) {
       //   return next(
