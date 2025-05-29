@@ -19,6 +19,7 @@ import { generateAndUploadThumbnail } from "../helpers/generateAndUploadThumbnai
 import { makeRenderQueue } from "../../../../render-queue";
 import { getWordTimestampsFromScript } from "../helpers/transcription";
 import ScriptModel from "../../../db/models/Script.model";
+import { Languages } from "../../../utils/enum/enums";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,14 +76,14 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
     generatedByAi,
   });
 
-  const voiceActor = await VoiceActorModel.findOne({
-    language,
-    accentOrDialect,
-  });
-  const referenceId = voiceActor.referenceId;
-  if (!referenceId) {
-    next(new Error("Failed to find voiceover actor with selected options"));
-  }
+  // const voiceActor = await VoiceActorModel.findOne({
+  //   language,
+  //   accentOrDialect,
+  // });
+  // const referenceId = voiceActor.referenceId;
+  // if (!referenceId) {
+  //   next(new Error("Failed to find voiceover actor with selected options"));
+  // }
 
   // try {
   // console.log("Generating Script...");
@@ -106,6 +107,9 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
   const voiceResponse = await elevenLabsVoiceOver({
     req,
     scriptText: content,
+    language,
+    accentOrDialect,
+    scriptId
   });
   // const voiceResponse = await createVoiceOver({
   //   req,
@@ -134,7 +138,15 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
   console.log(localFilePath);
   const voiceFile = path.basename(voiceResponse.outputFilePath);
 
-  const words = await getWordTimestampsFromScript(localFilePath);
+  let abb;
+
+  if (language === "english") {
+    abb = "en"
+  } else {
+    abb = "ar"
+  }
+
+  const words = await getWordTimestampsFromScript(localFilePath, abb);
   console.log(words);
 
   const wordArray = Object.keys(words)
@@ -516,6 +528,8 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
   const voiceResponse = await elevenLabsVoiceOver({
     req,
     scriptText: content,
+    language,
+    accentOrDialect
   });
 
   const voiceId = voiceResponse.voice._id;
@@ -534,7 +548,15 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
   console.log(localFilePath);
   const voiceFile = path.basename(voiceResponse.outputFilePath);
 
-  const words = await getWordTimestampsFromScript(localFilePath);
+  let abb;
+
+  if (language === "english") {
+    abb = "en"
+  } else {
+    abb = "ar"
+  }
+
+  const words = await getWordTimestampsFromScript(localFilePath, abb);
   console.log(words);
 
   const wordArray = Object.keys(words)

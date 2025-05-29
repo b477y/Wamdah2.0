@@ -88,7 +88,7 @@ const bootstrap = (app, express, remotionBundleUrl: string) => {
   });
 
   // Endpoint to get a job status
-  app.get("/renders/:jobId", async (req, res) => {
+  app.get("/api/renders/:jobId", async (req, res) => {
     const jobId = req.params.jobId;
     const job = queue.jobs.get(jobId);
 

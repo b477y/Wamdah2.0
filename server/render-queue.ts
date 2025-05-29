@@ -129,7 +129,7 @@ export const makeRenderQueue = ({
       });
 
       await renderMedia({
-        concurrency: os.cpus().length - 4,
+        concurrency: os.cpus().length - 6,
         chromiumOptions: {
           gl: "angle"
         },

@@ -3,11 +3,10 @@ from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 from app.core.model_loader import model
 
-async def handle_transcription_path(path: str, background_tasks: BackgroundTasks):
-    # This function uses the path directly without UploadFile
+async def handle_transcription_path(path: str, language: str, background_tasks: BackgroundTasks):
     try:
-        print("Starting transcription on:", path)
-        segments_generator, info = model.transcribe(path, beam_size=5, language="ar", word_timestamps=True)
+        print(f"Starting transcription on: {path} with language: {language}")
+        segments_generator, info = model.transcribe(path, beam_size=5, language=language, word_timestamps=True)
         print("Transcription completed.")
 
         words = []
@@ -23,4 +22,3 @@ async def handle_transcription_path(path: str, background_tasks: BackgroundTasks
         return JSONResponse(words)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
-

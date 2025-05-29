@@ -28,7 +28,7 @@ export const retrieveAiAvatars = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp }) => {
+export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp, language }) => {
   if (!speaker || !script) {
     throw new Error("Missing required fields: speaker and script")
   }
@@ -190,7 +190,16 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp 
     //   resource_type: "video",
     // });
 
-    const words = await getWordTimestampsFromScript(voiceOutputPath)
+
+    let abb;
+
+    if (language === "english") {
+      abb = "en"
+    } else {
+      abb = "ar"
+    }
+
+    const words = await getWordTimestampsFromScript(voiceOutputPath, abb);
     console.log(words);
 
     const wordArray = Object.keys(words)

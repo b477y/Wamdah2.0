@@ -3,28 +3,30 @@ import { cloud } from "../../../utils/multer/cloudinary.multer";
 
 const uploadToCloud = async ({ req, title, localFilePath }) => {
   return new Promise((resolve, reject) => {
-    cloud.uploader.upload_large(
+    cloud.uploader.upload(
       localFilePath,
       {
         folder: `${process.env.APP_NAME}/${req.user._id}/${title}_${Date.now()}`,
         resource_type: "video",
-        chunk_size: 6 * 1024 * 1024,
       },
       (error, result) => {
         if (error) {
-          console.error("❌ Cloudinary upload error:", error);
+          console.error("Cloudinary upload error:", error);
+          fs.unlink(localFilePath, (unlinkErr) => {
+            if (unlinkErr) console.warn("Failed to delete local video file after upload error:", unlinkErr);
+            else console.log("Deleted local file after upload error:", localFilePath);
+          });
           return reject(new Error("An error occurred while uploading the video to Cloudinary"));
         }
 
-        console.log("✅ Video upload completed!");
+        console.log("Video upload completed!");
 
-        // Async deletion, logging any error but not failing upload because of it
-        // fs.unlink(localFilePath, (err) => {
-        //   if (err) console.warn("Failed to delete local video file:", err);
-        //   else console.log("Deleted local file:", localFilePath);
-        // });
+        fs.unlink(localFilePath, (err) => {
+          if (err) console.warn("Failed to delete local video file:", err);
+          else console.log("Deleted local file:", localFilePath);
+        });
 
-        resolve(result); // <-- result contains secure_url, public_id, etc.
+        resolve(result);
       }
     );
   });

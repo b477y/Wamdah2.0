@@ -12,7 +12,7 @@ export const AccentsAndDialects = Object.freeze({
   american: { en: "american", ar: "الامريكية" },
   british: { en: "british", ar: "البريطانية" },
   egyptian: { en: "egyptian", ar: "المصرية" },
-  syrian: { en: "syrian", ar: "السورية" },
+  saudi: { en: "saudi", ar: "السعودية" },
 });
 
 export const Genders = Object.freeze({

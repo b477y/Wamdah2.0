@@ -1,6 +1,6 @@
 import asyncHandler from "../../../utils/response/error.response";
 import axios from "axios";
-import fs from "fs";
+import { promises as fs } from 'fs';
 import msgpack5 from "msgpack5";
 import successResponse from "../../../utils/response/success.response";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
@@ -91,86 +91,74 @@ export const createVoiceOver = async ({
   }
 };
 
-
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import path from "path";
-import fs from "fs/promises"; // Use fs.promises for async file operations
-import { fileURLToPath } from "url";
-// import VoiceModel from "path/to/your/VoiceModel"; // <--- IMPORTANT: Import your Mongoose model here
-
-// For local testing, keep dotenv/config if you want to swap later,
-// or just ensure you hardcode the key in a testing-only environment.
-// import "dotenv/config";
-
 export const elevenLabsVoiceOver = async ({
   req,
   scriptText,
-  language = "arabic",
-  // If these come from the outside, pass them as arguments
-  // scriptId,
-  // voiceoverActorId
+  language,
+  accentOrDialect,
+  scriptId
 }) => {
-  // Hardcoded API key - ONLY for local testing, never for production or public code!
-  // Move this to process.env.ELEVENLABS_API_KEY for deployment.
   const elevenlabs = new ElevenLabsClient({
-    apiKey: 'sk_572bf51a2c2e6a0f4f83b9591934fc269954b28f0908fc15',
+    // apiKey: 'sk_50e5f6c2098fcb084f31a288ec70049b6e729407dcf14a2e',
+    apiKey: 'sk_a76d1dcf9f386b63509ae47461bff6f6c0c1c28bb606c7e0',
   });
+  console.log("Script text being sent to Eleven Labs:", scriptText);
+  // Haytham => IES4nrmZdUBHByLBde0P (Egyptian)
+  // Saudi => IK7YYZcSpmlkjKrQxbSn
+  // Mark => UgBBYS2sOqTuMpoF3BR0 (American)
+  // Archer => Fahco4VZzobUeiPqni1S (British)
+  // console.log(language);
+  // console.log(accentOrDialect);
 
-  const voiceId = "IES4nrmZdUBHByLBde0P"; // Define the voice ID
+  // const voiceId = 'UgBBYS2sOqTuMpoF3BR0'; // Mark (American)
+
+  const voiceoverActorId = await VoiceActorModel.findOne({ language, accentOrDialect })
+  // console.log(voiceoverActorId);
+
+  const voiceId = voiceoverActorId.voiceId
   const modelId = "eleven_multilingual_v2";
   const outputFormat = "mp3_44100_128";
 
-  // --- 1. Generate Audio from Eleven Labs ---
-  // The .convert method typically returns a Buffer for common formats like mp3
   const audioBuffer = await elevenlabs.textToSpeech.convert(voiceId, {
     text: scriptText,
-    voiceId: voiceId,
+    voiceId,
     modelId: modelId,
     outputFormat: outputFormat,
   });
 
-  // --- 2. Define File Paths and Ensure Directory Exists ---
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
-  const fileExtension = outputFormat.split('_')[0]; // Extracts "mp3"
+  const fileExtension = outputFormat.split('_')[0];
   const filename = `${Date.now()}.${fileExtension}`;
 
   const outputDir = path.join(__dirname, "../../../../../public/renders/voices");
   const outputFilePath = path.join(outputDir, filename);
 
   try {
-    // Ensure the directory exists. recursive: true will create parents and not error if it exists.
     await fs.mkdir(outputDir, { recursive: true });
   } catch (error) {
     console.error("Error creating output directory:", error);
     throw new Error("Failed to create voiceover directory.");
   }
 
-  // --- 3. Save Audio to File ---
   try {
-    await fs.writeFile(outputFilePath, audioBuffer); // Write the Buffer directly to the file
+    await fs.writeFile(outputFilePath, audioBuffer);
     console.log("Voice file path:", outputFilePath);
   } catch (error) {
     console.error("Error writing voice file:", error);
     throw new Error("Failed to save voiceover file.");
   }
 
-  // --- 4. Database Interaction (Assuming VoiceModel is a Mongoose model) ---
-  let createdVoiceEntry; // Declare variable to hold the created DB entry
+  let createdVoiceEntry;
 
   try {
-    // If you plan to upload this file to a cloud storage (like Cloudinary)
-    // you would do that here and get `cloudUploadResult`
-    // const cloudUploadResult = await uploadToCloudStorage(outputFilePath); // Example call
-
     createdVoiceEntry = await VoiceModel.create({
-      // createdBy: req.user?._id, // Conditionally access user ID
-      // voiceSource: cloudUploadResult || outputFilePath, // Use cloud path or local path
-      // scriptId, // Needs to be passed as an argument if used
-      // voiceoverActorId, // Needs to be passed as an argument if used
-      language: language,
-      // accentOrDialect, // Needs to be passed or determined
+      createdBy: req.user._id,
+      scriptId,
+      voiceoverActorId,
+      language,
+      accentOrDialect,
     });
 
     if (!createdVoiceEntry) {
@@ -181,7 +169,5 @@ export const elevenLabsVoiceOver = async ({
     throw new Error("An error occurred while saving the voice in the database.");
   }
 
-  // --- 5. Return Results ---
-  // Return the created database entry, voiceId, and file path
   return { voice: createdVoiceEntry, voiceId: voiceId, outputFilePath: outputFilePath };
 };

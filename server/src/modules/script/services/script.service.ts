@@ -5,16 +5,18 @@ import successResponse from "../../../utils/response/success.response";
 import { scrapeText } from "../../video/helpers/scraper";
 import { generateScriptWithAi } from "../../video/helpers/scriptGenerator";
 import searchImages from "../../../utils/imagesCollector/imagesCollector";
+import searchImagesByUnsplash from "../../../utils/imagesCollector/unsplashImageCollector";
 
 const genAI = new GoogleGenerativeAI("AIzaSyCdl3I1w6YgRL3SEILwcLxfjD4aE-p9cZg");
 
 export const generateScript4Product = asyncHandler(async (req, res, next) => {
-  const { url, language,accentOrDialect } = req.body;
+  const { url, language, accentOrDialect } = req.body;
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const type = "advertising"
 
   const scrapedText = await scrapeText(url);
 
-  const generatedScript = await generateScriptWithAi(scrapedText, language,accentOrDialect);
+  const generatedScript = await generateScriptWithAi(scrapedText, language, accentOrDialect);
 
   const keywordPrompt = `
 The following is a video script:
@@ -42,8 +44,8 @@ Task:
   // });
 
   // Use keyword to fetch related images
-  await searchImages(keyword);
-
+  // await searchImages(keyword);
+  await searchImagesByUnsplash(keyword, type)
   // Send response
   return successResponse({
     res,
@@ -61,6 +63,7 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
     educational: `Develop a concise and clear educational video script that explains a specific topic simply and effectively. The goal is for the viewer to grasp one key takeaway by the end. The script should break down complex information, use relatable examples, and maintain an engaging tone throughout.`,
     tech: `Create a dynamic and easy-to-understand tech video script that simplifies a complex technological concept or product. The script should make the idea easily digestible, intriguing, and relevant to a broad audience. Focus on demonstrating a practical benefit or solving a common problem.`,
     nutrition: `Write an engaging and informative nutrition video script that offers practical advice or debunks a common myth. The script should simplify nutritional information, making it accessible and actionable for viewers. Focus on one clear, actionable tip or insight that promotes healthier eating habits.`,
+    tourism: `Develop an inviting and captivating video script designed to showcase a specific location and boost its tourism. The script should highlight the unique attractions, cultural experiences, and natural beauty of the place. Aim to evoke a strong sense of wanderlust and make viewers feel a personal connection to the destination, encouraging them to plan a visit.`
   };
 
   const typeInstruction = typePrompts[type];
@@ -109,15 +112,8 @@ Your task:
 
   console.log("Extracted Title:", title);
 
-
-  // const script = await ScriptModel.create({
-  //   title,
-  //   content: generatedScript,
-  //   createdBy: req.user._id,
-  //   generatedByAi: true,
-  // });
-
   // await searchImages(title);
+  await searchImagesByUnsplash(title, type)
 
   return successResponse({
     res,

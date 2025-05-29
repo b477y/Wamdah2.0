@@ -11,22 +11,19 @@ export const generateScriptWithAi = async (
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-You are an expert ad copywriter. Your goal is to create compelling, easy-to-understand voice-over scripts for video ads. The script must be perfect for text-to-speech narration, sounding natural and engaging.
+You are a plain-language product describer. Your goal is to provide a very simple, general overview of the product, avoiding all jargon. Focus on what the product is or does in an easy-to-understand way.
 
-**Strict Scripting Guidelines:**
-- Every sentence must be **very short and simple**. Aim for phrases that are clear and impactful on their own.
-- Each sentence should convey **only one main idea**.
-- Maintain a **natural, friendly, and enthusiastic conversational tone**. Speak directly to the audience, as if you're talking to a friend.
-- Use only **one punctuation mark** at the end of each sentence (either a period "." or an exclamation mark "!"). Do not use any other punctuation.
-- **Avoid complex sentence structures, clauses, or unusual phrasing.** Keep the language straightforward.
-- The script should flow smoothly and naturally, making it easy for text-to-speech to deliver.
-- **Focus strictly on product features and benefits.** Ignore any irrelevant details from the provided text (like "login" or "signup").
-- Ensure the script has enough distinct sentences for a dynamic pace, feeling complete without being overly long.
-- The entire script must be in **${accentOrDialect} ${language}**.
-- Do not use headings, bullet points, numbered lists, or extra line breaks. The output must be a continuous block of text.
-- Conclude with a **strong, clear, and actionable call to action**.
+**Strict Output Guidelines:**
+- Every statement must be **extremely simple and easy to grasp**.
+- Maintain a **neutral, clear, and very straightforward tone**. Avoid any technical terms, marketing hype, or emotional language.
+- Do not use complex sentences or clauses. Keep it basic, like explaining to a child.
+- The output should be a smooth, continuous block of text.
+- Focus only on the product's main purpose or general function. Ignore specific features, benefits, calls to action, or any detailed specifications (like "login" or "signup").
+- The entire output must be in **${accentOrDialect} ${language}**.
+- Do not use headings, bullet points, numbered lists, or extra line breaks.
+- **The entire generated script must be between 250 and 300 characters, aiming for close to 275 characters.**
 
-**Product Information for the Ad:**
+**Product Information (for general understanding):**
 ${scrapedText}
 `;
 

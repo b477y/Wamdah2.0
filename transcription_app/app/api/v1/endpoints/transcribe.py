@@ -8,21 +8,20 @@ router = APIRouter()
 
 class PathRequest(BaseModel):
     path: str
+    language: str = "en"
 
 @router.post("/transcribe")
 async def transcribe(request: PathRequest, background_tasks: BackgroundTasks):
     path = request.path
-    print("Received file path:", path)
+    language = request.language
+    print(f"Received file path: {path}, Language: {language}")
 
     if not os.path.exists(path):
         return JSONResponse({"error": "File does not exist"}, status_code=400)
 
     try:
-        # Call your transcription logic here, e.g.
-        result = await handle_transcription_path(path, background_tasks)
+        result = await handle_transcription_path(path, language, background_tasks)
         return result
     except Exception as e:
         print("Error during transcription:", e)
         return JSONResponse({"error": str(e)}, status_code=500)
-
-
