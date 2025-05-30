@@ -19,7 +19,7 @@ export const generateScriptWithAi = async (
   Language: ${language}${accentOrDialect ? ` (${accentOrDialect})` : ""}.
 
   Script Requirements:
-  - Length: Strictly between 200 and 300 characters.
+  - Length: Strictly between 250 and 300 characters.
   - Focus: Highlight the product's benefits or unique selling points.
   - Tone: Engaging, persuasive, and positive.
   - Style: Natural, conversational, and suitable for a quick online ad.

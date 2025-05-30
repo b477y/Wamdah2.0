@@ -1,9 +1,7 @@
 import asyncHandler from "../../../utils/response/error.response";
-import successResponse from "../../../utils/response/success.response";
 import { fileURLToPath } from "url";
 import path from "node:path";
 import { bundle } from "@remotion/bundler";
-import { renderMedia, getCompositions } from "@remotion/renderer";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
 import VideoModel from "../../../db/models/Video.model";
 import { generateScriptUsingGimini } from "../helpers/generateScriptUsingGimini";
@@ -17,7 +15,7 @@ import calculateFrames from "../helpers/calculateFrames";
 import uploadToCloud from "../helpers/uploadToCloud";
 import { generateAndUploadThumbnail } from "../helpers/generateAndUploadThumbnail.js";
 import { makeRenderQueue } from "../../../../render-queue";
-import { getWordTimestampsFromScript } from "../helpers/transcription";
+import { getWordTimestampsFromScript, transcribeWithDeepgram } from "../helpers/transcription";
 import ScriptModel from "../../../db/models/Script.model";
 import { Languages } from "../../../utils/enum/enums";
 
@@ -147,6 +145,7 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
   }
 
   const words = await getWordTimestampsFromScript(localFilePath, abb);
+  // const words = await transcribeWithDeepgram(localFilePath, abb);
   console.log(words);
 
   const wordArray = Object.keys(words)
@@ -529,7 +528,8 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
     req,
     scriptText: content,
     language,
-    accentOrDialect
+    accentOrDialect,
+    scriptId
   });
 
   const voiceId = voiceResponse.voice._id;

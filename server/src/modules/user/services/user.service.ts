@@ -164,21 +164,44 @@ export const subscribeToNewsLetter = asyncHandler(async (req, res, next) => {
 
 export const publishOnYoutube = asyncHandler(async (req, res) => {
   try {
+
+    const GOOGLE_CLIENT_ID = "146654726525-69kq31dpk5ihb67hcvf87cjmne0d6p13.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_SECRET = "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";
+    const GOOGLE_REDIRECT_URI = "http://localhost:3000/auth/google/callback";
+
     const { videoId } = req.body
 
     if (!videoId) {
       return res.status(400).send("Missing videoId");
     }
 
-    const { googleTokens } = await UserModel.findById(req.user._id);
+    const user = await UserModel.findById(req.user._id);
 
-    if (!googleTokens || !googleTokens.access_token) {
+    const { googleTokens } = user;
+
+    if (!googleTokens || !googleTokens.access_token || !googleTokens.refresh_token) {
       return res.status(400).send("Missing Google access token. Please connect your Google account properly to publish videos.");
     }
 
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      GOOGLE_REDIRECT_URI
+    );
+
     oauth2Client.setCredentials({
       access_token: googleTokens.access_token,
+      refresh_token: googleTokens.refresh_token,
+    });
+
+    oauth2Client.on('tokens', async (tokens) => {
+      if (tokens.refresh_token) {
+        user.googleTokens.refresh_token = tokens.refresh_token;
+        console.log("DEBUG: New refresh token issued. Saving to DB.");
+      }
+      user.googleTokens.access_token = tokens.access_token;
+      console.log("DEBUG: Access token refreshed. Saving to DB.");
+      await user.save();
     });
 
     const youtube = google.youtube({
@@ -186,7 +209,9 @@ export const publishOnYoutube = asyncHandler(async (req, res) => {
       auth: oauth2Client,
     });
 
-    const { videoSource } = await VideoModel.findById(videoId)
+    const video = await VideoModel.findById(videoId)
+
+    const { videoSource } = video;
 
     const videoUrl = videoSource.secure_url
 
@@ -200,9 +225,9 @@ export const publishOnYoutube = asyncHandler(async (req, res) => {
       part: "snippet,status",
       requestBody: {
         snippet: {
-          title: "My New Video",
-          description: "This is a description of my new video",
-          tags: ["tag1", "tag2"],
+          title: `${video.title}`,
+          // description: "",
+          // tags: [""],
         },
         status: {
           privacyStatus: "public",
@@ -219,6 +244,17 @@ export const publishOnYoutube = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Error publishing video:", error);
+    if (error.response && error.response.data && error.response.data.error) {
+      console.error("Google API Error:", error.response.data.error);
+      if (error.response.data.error === 'invalid_grant' || error.response.status === 401) {
+        const user = await UserModel.findById(req.user._id);
+        if (user) {
+          user.googleTokens = {};
+          await user.save();
+        }
+        return res.status(401).send("Your Google account link has expired or been revoked. Please re-link your Google account.");
+      }
+    }
     res.status(500).send("Error publishing video");
   }
 });

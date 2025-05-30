@@ -118,20 +118,21 @@ export const initiateGoogleOAuth = [
 
 export const handleGoogleOAuthCallback = asyncHandler(async (req, res, next) => {
   passport.authenticate('google', { session: false }, async (err, googleUser, info) => {
+    const FRONTEND_URL = "http://127.0.0.1:4200"
     try {
       if (err || !googleUser) {
         console.error('Google OAuth error:', err || 'No user returned');
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+        return res.redirect(`${FRONTEND_URL}/login?error=google_auth_failed`);
       }
 
       const userId = req.query.state;
       if (!userId) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_state`);
+        return res.redirect(`${FRONTEND_URL}/login?error=invalid_state`);
       }
 
       const user = await UserModel.findById(userId);
       if (!user) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=user_not_found`);
+        return res.redirect(`${FRONTEND_URL}/login?error=user_not_found`);
       }
 
       user.googleTokens = {
@@ -140,10 +141,10 @@ export const handleGoogleOAuthCallback = asyncHandler(async (req, res, next) => 
       };
       await user.save();
 
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard?google_auth=success`);
+      res.redirect(`${FRONTEND_URL}/dashboard?google_auth=success`);
     } catch (error) {
       console.error('Google OAuth callback error:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+      res.redirect(`${FRONTEND_URL}/login?error=server_error`);
     }
   })(req, res, next);
 });
