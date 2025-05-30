@@ -99,14 +99,8 @@ export const makeRenderQueue = ({
         });
         job.data.words = aiAvatarResponse.wordArray
       }
-      console.log({ que: job.data.words });
-      console.log({ aiAvatarResponse });
 
-      // Update job.data.localFilePath
-      // job.data.localFilePath = outputLocation;
-
-      const assetsPath = "http://localhost:3000/public"; // <--- Corrected for port 3000 and /public directory
-
+      const assetsPath = "http://localhost:3000/public";
 
       const inputProps = {
         titleText: job.data.titleText,
@@ -118,7 +112,7 @@ export const makeRenderQueue = ({
         type: job.data.type,
         timestamp: job.data.timestamp,
         fontFamily: job.data.fontFamily,
-        assetsPath: assetsPath, // <--- Pass the assetsPath
+        assetsPath: assetsPath,
       };
 
       const composition = await selectComposition({
@@ -207,21 +201,16 @@ export const makeRenderQueue = ({
         next(new Error("An error occured while getting the thumbnail url"));
       }
 
-
-
-
       video.thumbnailUrl = thumbnailResult.secure_url;
       await video.save()
 
-      // if (!video) {
-      //   return next(
-      //     new Error("An error saving the video into the database", {
-      //       cause: 409,
-      //     })
-      //   );
-      // }
-
-      // console.log("Video data saved in the database!");
+      if (!video) {
+        return next(
+          new Error("An error saving the video into the database", {
+            cause: 409,
+          })
+        );
+      }
 
     } catch (error) {
       console.error(error);

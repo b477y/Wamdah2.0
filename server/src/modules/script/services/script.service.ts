@@ -29,24 +29,15 @@ Task:
 3. Return ONLY that keyword, without any explanation or punctuation.
 `;
 
-  // Use Gemini Flash for keyword extraction
   const result = await model.generateContent(keywordPrompt);
   const keyword = result.response.text().trim().replace(/[".]/g, "");
 
   console.log("Extracted Title:", keyword);
 
-  // Save script
-  // const script = await ScriptModel.create({
-  //   title: keyword,
-  //   content: generatedScript,
-  //   createdBy: req.user._id,
-  //   generatedByAi: true,
-  // });
-
   // Use keyword to fetch related images
   // await searchImages(keyword);
   await searchImagesByUnsplash(keyword, type)
-  // Send response
+
   return successResponse({
     res,
     status: 201,

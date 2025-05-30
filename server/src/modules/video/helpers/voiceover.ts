@@ -104,16 +104,10 @@ export const elevenLabsVoiceOver = async ({
   });
   console.log("Script text being sent to Eleven Labs:", scriptText);
   // Haytham => IES4nrmZdUBHByLBde0P (Egyptian)
-  // Saudi => IK7YYZcSpmlkjKrQxbSn
   // Mark => UgBBYS2sOqTuMpoF3BR0 (American)
   // Archer => Fahco4VZzobUeiPqni1S (British)
-  // console.log(language);
-  // console.log(accentOrDialect);
-
-  // const voiceId = 'UgBBYS2sOqTuMpoF3BR0'; // Mark (American)
 
   const voiceoverActorId = await VoiceActorModel.findOne({ language, accentOrDialect })
-  // console.log(voiceoverActorId);
 
   const voiceId = voiceoverActorId.voiceId
   const modelId = "eleven_multilingual_v2";
