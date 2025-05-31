@@ -5,6 +5,14 @@ import checkCredits from "../../middlewares/checkCredits.middleware";
 
 const router = Router();
 
+// Get video by job id
+router.get(
+  "/by-job-id",
+  authentication(),
+  checkCredits,
+  videoService.getVideoByJobId
+);
+
 // Instant Ai Video
 router.post(
   "/generate",

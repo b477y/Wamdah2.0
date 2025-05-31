@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-        "module": "esnext",          // or "es2022", "node16", etc.
+        "module": "esnext",
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "strict": false,
@@ -14,8 +14,8 @@
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
-    "allowJs": true,       // allow JS files in project
-    "checkJs": false,      // disable type checking on JS files
+    "allowJs": true,
+    "checkJs": false,
     "types": []
   },
   "exclude": ["remotion.config.ts"]

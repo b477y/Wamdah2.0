@@ -4,7 +4,6 @@ import { fileURLToPath } from "url";
 import axios from "axios";
 import asyncHandler from "../../../utils/response/error.response";
 import successResponse from "../../../utils/response/success.response";
-import { cloud } from "../../../utils/multer/cloudinary.multer";
 import { exec } from "node:child_process";
 import AiAvatarModel from "../../../db/models/AiAvatar.model";
 import ffmpeg from 'fluent-ffmpeg';
@@ -63,8 +62,6 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
     });
 
     if (response.data.error) {
-      // Assuming `res` is available in this scope, if this function is called from a route handler.
-      // If not, you might want to adjust how errors are returned/thrown.
       throw new Error(response.data.error.message);
     }
 
@@ -72,12 +69,12 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
 
     let statusData;
     let attempts = 0;
-    const maxAttempts = 240; // 20 minutes (240 * 5 seconds)
+    const maxAttempts = 240;
     do {
       if (attempts >= maxAttempts) {
         throw new Error("Video processing timeout");
       }
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const statusRes = await axios.get(
         `${getVideoStatusUrl}?video_id=${videoId}`,
@@ -139,8 +136,8 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
       fs.mkdirSync(voicesDir, { recursive: true });
     }
 
-    const outputPath = path.join(videosDir, fileName); // This is the path for the downloaded MP4 video
-    const voiceOutputPath = path.join(voicesDir, mp3FileName); // This is the path for the extracted MP3 audio
+    const outputPath = path.join(videosDir, fileName);
+    const voiceOutputPath = path.join(voicesDir, mp3FileName);
     const outputAbsolutePath = path.resolve(outputPath);
     console.log(outputAbsolutePath);
 
@@ -158,19 +155,16 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
 
     console.log(`Video saved locally at ${outputPath}`);
 
-    // Now convert the downloaded video to MP3
     try {
-      const resultPath = await convertToMp3(outputPath, voiceOutputPath); // Corrected: outputPath as input, voiceOutputPath as output
+      const resultPath = await convertToMp3(outputPath, voiceOutputPath);
       console.log('MP3 file saved at:', resultPath);
-      // You can now send this MP3 to Whisper
     } catch (err) {
       console.error('Conversion failed:', err);
-      throw new Error("Failed to convert video to MP3"); // Re-throw to indicate failure
+      throw new Error("Failed to convert video to MP3");
     }
 
     const outputWebm = path.join(videosDir, `${speaker}_${timestamp}.webm`);
 
-    // Removing Croma
     await new Promise((resolve, reject) => {
       exec(
         `ffmpeg -i "${outputPath}" -vf "chromakey=0x00FF00:0.3:0.0" -c:v libvpx -pix_fmt yuva420p -auto-alt-ref 0 "${outputWebm}" -y`,
@@ -185,12 +179,6 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
       );
     });
 
-    // const cloudUploadResult = await cloud.uploader.upload(outputWebm, {
-    //   folder: `${process.env.APP_NAME}/${req.user._id}/${req.body.title}/ai-avatar-video`,
-    //   resource_type: "video",
-    // });
-
-
     let abb;
 
     if (language === "english") {
@@ -200,10 +188,12 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
     }
 
     const words = await getWordTimestampsFromScript(voiceOutputPath, abb);
+    // const words = await transcribeWithDeepgram(localFilePath, abb);
+
     console.log(words);
 
     const wordArray = Object.keys(words)
-      .sort((a, b) => Number(a) - Number(b)) // ensure sorted by key
+      .sort((a, b) => Number(a) - Number(b))
       .map(key => words[key]);
 
 

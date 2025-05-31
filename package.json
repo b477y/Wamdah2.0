@@ -22,6 +22,7 @@
     "@revideo/vite-plugin": "^0.10.4",
     "@types/dotenv": "^8.2.3",
     "@types/dotenv-safe": "^8.1.6",
+    "@types/passport": "^1.0.17",
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "body-parser": "^2.2.0",

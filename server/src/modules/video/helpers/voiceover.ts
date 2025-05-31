@@ -99,7 +99,7 @@ export const elevenLabsVoiceOver = async ({
   scriptId
 }) => {
   const elevenlabs = new ElevenLabsClient({
-    apiKey: 'sk_e65a093672876f653f5f3d09b8c68db8289c12f6e7bbde6d',
+    apiKey: 'sk_ff8970bef07e4316d6aa29cbb0e464d850185b8972bba290',
   });
   console.log("Script text being sent to Eleven Labs:", scriptText);
   // Haytham => IES4nrmZdUBHByLBde0P (Egyptian)

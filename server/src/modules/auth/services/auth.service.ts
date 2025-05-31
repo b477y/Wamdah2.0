@@ -136,9 +136,10 @@ export const handleGoogleOAuthCallback = asyncHandler(async (req, res, next) => 
       }
 
       user.googleTokens = {
-        access_token: googleUser.accessToken,
-        refresh_token: googleUser.refreshToken,
+        access_token: googleUser.googleTokens.access_token,
+        refresh_token: googleUser.googleTokens.refresh_token,
       };
+
       await user.save();
 
       res.redirect(`${FRONTEND_URL}/dashboard?google_auth=success`);

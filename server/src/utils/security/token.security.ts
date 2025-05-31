@@ -4,8 +4,8 @@ import UserModel from "../../db/models/User.model";
 
 export const generateTokens = async ({
   payload,
-  accessTokenSK = process.env.ACCESS_TOKEN_SK,
-  refreshTokenSK = process.env.REFRESH_TOKEN_SK,
+  accessTokenSK = "936d45727465f0c399cec52efe8a77450eb4bf1c77e2f5b197c6c1744bf5661a",
+  refreshTokenSK = "3e9dae78c0c87b83833d054a50a24d3269e941de1c5e3c2c5dd9302175a48dc7",
   tokenType = [TokenType.ACCESS, TokenType.REFRESH],
 }) => {
   if (!payload) {
@@ -20,7 +20,7 @@ export const generateTokens = async ({
       { _id: payload._id, role: payload.role },
       accessTokenSK,
       {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME,
+        expiresIn: "7d",
       }
     );
   }
@@ -32,7 +32,7 @@ export const generateTokens = async ({
       { _id: payload._id, role: payload.role },
       refreshTokenSK,
       {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
+        expiresIn: "7d",
       }
     );
   }
@@ -50,8 +50,8 @@ export const decodeToken = async ({ authorization, tokenType } = {}) => {
 
   const secretKey =
     tokenType === TokenType.ACCESS
-      ? process.env.ACCESS_TOKEN_SK
-      : process.env.REFRESH_TOKEN_SK;
+      ? "936d45727465f0c399cec52efe8a77450eb4bf1c77e2f5b197c6c1744bf5661a"
+      : "3e9dae78c0c87b83833d054a50a24d3269e941de1c5e3c2c5dd9302175a48dc7";
 
   let decoded;
   try {
