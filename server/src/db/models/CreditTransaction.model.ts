@@ -7,13 +7,8 @@ const CreditTransactionSchema = new mongoose.Schema(
     egpAmount: { type: String, required: true },
     paymentProvider: { type: String, default: "Vodafone Cash" },
     paymentReference: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["Pending", "Success", "Failed"],
-      default: "Pending",
-    },
-  },
-  { timestamps: true }
+    status: { type: String, enum: ["Pending", "Success", "Failed"], default: "Pending" }
+  }, { timestamps: true }
 );
 
 const CreditTransactionModel =

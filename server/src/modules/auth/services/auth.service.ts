@@ -12,26 +12,19 @@ import passport from "../../../utils/passport/passport";
 
 export const signUp = asyncHandler(async (req, res, next) => {
   const { name, email, password } = req.body;
-
   if (!name || !email || !password) { return next(new Error("All inputs are required to signup", { cause: 409 })); }
-
   const user = await UserModel.findOne({ email, deletedAt: { $exists: false } });
   if (user) { return next(new Error("Email already exists", { cause: 409 })); }
-
-  const accessTokenSK = process.env.ACCESS_TOKEN_SK;
-  const refreshTokenSK = process.env.REFRESH_TOKEN_SK;
-
+  const accessTokenSK = "936d45727465f0c399cec52efe8a77450eb4bf1c77e2f5b197c6c1744bf5661a";
+  const refreshTokenSK = "3e9dae78c0c87b83833d054a50a24d3269e941de1c5e3c2c5dd9302175a48dc7";
   const newUser = await UserModel.create({ name, email, password });
-
   emailEvent.emit("sendWelcome", { email, name });
-
   const tokens = await generateTokens({
     payload: { _id: newUser._id, role: newUser.role },
     accessTokenSK,
     refreshTokenSK,
     tokenType: [TokenType.ACCESS, TokenType.REFRESH],
   });
-
   return successResponse({ res, status: 201, message: "Account created successfully.", data: { tokens }, });
 });
 
@@ -39,20 +32,16 @@ export const signIn = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await UserModel.findOne({ email, deletedAt: { $exists: false } });
   if (!user) { return next(new Error("User not found", { cause: 404 })); }
-
   const isMatch = await compareHash({ plaintext: password, encryptedText: user.password, });
   if (!isMatch) { return next(new Error("Invalid credentials", { cause: 400 })); }
-
-  const accessTokenSK = process.env.ACCESS_TOKEN_SK;
-  const refreshTokenSK = process.env.REFRESH_TOKEN_SK;
-
+  const accessTokenSK = "936d45727465f0c399cec52efe8a77450eb4bf1c77e2f5b197c6c1744bf5661a";
+  const refreshTokenSK = "3e9dae78c0c87b83833d054a50a24d3269e941de1c5e3c2c5dd9302175a48dc7";
   const tokens = await generateTokens({
     payload: { _id: user._id, role: user.role },
     accessTokenSK,
     refreshTokenSK,
     tokenType: [TokenType.ACCESS, TokenType.REFRESH],
   });
-
   return successResponse({ res, status: 200, message: "Logged in successfully", data: { tokens }, });
 });
 
@@ -64,8 +53,8 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
 
   if (!user || !user._id || !user.role) { return next(new Error("Invalid or expired refresh token", { cause: 401 })); }
 
-  let accessTokenSK = process.env.ACCESS_TOKEN_SK;
-  let refreshTokenSK = process.env.REFRESH_TOKEN_SK;
+  let accessTokenSK = "936d45727465f0c399cec52efe8a77450eb4bf1c77e2f5b197c6c1744bf5661a";
+  let refreshTokenSK = "3e9dae78c0c87b83833d054a50a24d3269e941de1c5e3c2c5dd9302175a48dc7";
 
   const tokens = await generateTokens({
     payload: { _id: user._id, role: user.role },

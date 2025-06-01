@@ -7,7 +7,6 @@ import scriptController from "./modules/script/script.controller";
 import authController from "./modules/auth/auth.controller";
 import aiAvatarController from "./modules/aiAvatar/aiAvatar.controller";
 import userController from "./modules/user/user.controller";
-import testingController from "./modules/testing/testing.controller";
 import path from "node:path";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
@@ -63,7 +62,7 @@ const bootstrap = (app, express) => {
 
     res.json({
       status: job.status,
-      progress: job.progress,
+      progress: job.progress * 100,
       video
     });
   });
@@ -76,7 +75,6 @@ const bootstrap = (app, express) => {
   app.use("/api/scripts", scriptController);
   app.use("/api/aiAvatar", aiAvatarController);
   app.use("/api/user", userController);
-  app.use("/api/testing", testingController);
 
   app.use(errorHandlingMiddleware);
 

@@ -7,3 +7,8 @@ build
 renders
 ./.vscode/
 .dockerignore
+./public/templates/advertising/
+./public/templates/educational/
+./public/templates/nutrition/
+./public/templates/tech/
+./public/templates/tourism/

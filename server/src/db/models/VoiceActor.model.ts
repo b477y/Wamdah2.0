@@ -3,9 +3,9 @@ import { AccentsAndDialects, Languages } from "../../utils/enum/enums";
 
 const VoiceActorSchema = new mongoose.Schema(
   {
-    actorName: { type: String, required: true },
-    referenceId: { type: String, required: true },
-    voiceId: { type: String, required: true },
+    actorName: { type: String, required: true, unique: true },
+    referenceId: { type: String, required: true, unique: true },
+    voiceId: { type: String, required: true, unique: true },
     language: { type: String, enum: Object.keys(Languages) },
     accentOrDialect: { type: String, enum: Object.keys(AccentsAndDialects) },
   },

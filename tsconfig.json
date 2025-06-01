@@ -5,6 +5,7 @@
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "strict": false,
+    "suppressImplicitAnyIndexErrors":true,
     "noEmit": true,
     "lib": ["es2022"],
     "esModuleInterop": true,

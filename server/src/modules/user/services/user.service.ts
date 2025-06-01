@@ -42,7 +42,6 @@ export const getUserVideos = asyncHandler(async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Catch any database errors
     next(new Error(`Failed to get videos: ${error.message}`, { cause: 500 }));
   }
 });
