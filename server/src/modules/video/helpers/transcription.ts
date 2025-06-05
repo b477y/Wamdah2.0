@@ -1,5 +1,5 @@
 import axios from 'axios';
-import fs from 'fs'; // You'll need this to read the audio file
+import fs from 'fs';
 import path from 'path';
 
 export async function getWordTimestampsFromScript(absolutePath: string, transcriptionLanguage: string) {
@@ -38,13 +38,12 @@ export const transcribeWithDeepgram = async (filePath, language) => {
             }
         );
 
-        // Process the Deepgram response to match your desired output
         const deepgramResults = response.data;
         const words = deepgramResults.results?.channels?.[0]?.alternatives?.[0]?.words;
 
         if (!words || words.length === 0) {
             console.warn("No words returned from Deepgram transcription. This might be due to silence or very short audio.");
-            return {}; // Return an empty object if no words
+            return {};
         }
 
         const formattedWords = {};
@@ -56,7 +55,6 @@ export const transcribeWithDeepgram = async (filePath, language) => {
             };
         });
 
-        // You can console.dir(formattedWords, { depth: null }); here if you want to see the processed output
         return formattedWords;
 
     } catch (error) {

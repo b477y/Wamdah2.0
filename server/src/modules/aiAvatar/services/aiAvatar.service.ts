@@ -11,6 +11,7 @@ import { getWordTimestampsFromScript } from "../../video/helpers/transcription";
 
 // Load API key from environment variables
 const apiKey = "ODJjZDFmY2RkMDhmNGVmNjk2ZWU3YTQwM2E3MmNjMmItMTc0ODA5NzI2Mw==";
+// const apiKey = "MjZlMjU4ODM4M2Q0NDgxNmE3NDRkYjdkN2VkNDg2ODEtMTc0OTEzMDA5OQ===="; // 10 Credits
 const generateVideoUrl = "https://api.heygen.com/v2/video/generate";
 const getVideoStatusUrl = "https://api.heygen.com/v1/video_status.get";
 
@@ -61,9 +62,7 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
       timeout: 3600000,
     });
 
-    if (response.data.error) {
-      throw new Error(response.data.error.message);
-    }
+    if (response.data.error) { throw new Error(response.data.error.message) }
 
     const videoId = response.data.data.video_id;
 
@@ -180,12 +179,7 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
     });
 
     let abb;
-
-    if (language === "english") {
-      abb = "en"
-    } else {
-      abb = "ar"
-    }
+    if (language === "english") { abb = "en" } else { abb = "ar" }
 
     const words = await getWordTimestampsFromScript(voiceOutputPath, abb);
     // const words = await transcribeWithDeepgram(localFilePath, abb);
@@ -195,7 +189,6 @@ export const generateAiAvatarWOCroma = async ({ req, speaker, script, timestamp,
     const wordArray = Object.keys(words)
       .sort((a, b) => Number(a) - Number(b))
       .map(key => words[key]);
-
 
     return { aiAvatarFile: `${speaker}_${timestamp}.webm`, aiAvatarVoiceFile: mp3FileName, wordArray };
   } catch (error) {

@@ -91,37 +91,15 @@ export const createVoiceOver = async ({
   }
 };
 
-export const elevenLabsVoiceOver = async ({
-  req,
-  scriptText,
-  language,
-  accentOrDialect,
-  scriptId
-}) => {
-  const elevenlabs = new ElevenLabsClient({
-    apiKey: 'sk_547c166981897faae3cbc13b8297471034b173dbc86506ac',
-  });
-  console.log("Script text being sent to Eleven Labs:", scriptText);
-  // Haytham => IES4nrmZdUBHByLBde0P (Egyptian)
-  // Mark => UgBBYS2sOqTuMpoF3BR0 (American)
-  // Archer => Fahco4VZzobUeiPqni1S (British)
-
+export const elevenLabsVoiceOver = async ({ req, scriptText, language, accentOrDialect, scriptId }) => {
+  const elevenlabs = new ElevenLabsClient({ apiKey: 'sk_79b0e20bb3c325a47a62a345aeda9f4b8e1d908f2b226a42' });
   const voiceoverActorId = await VoiceActorModel.findOne({ language, accentOrDialect })
-
   const voiceId = voiceoverActorId.voiceId
   const modelId = "eleven_multilingual_v2";
   const outputFormat = "mp3_44100_128";
-
-  const audioBuffer = await elevenlabs.textToSpeech.convert(voiceId, {
-    text: scriptText,
-    voiceId,
-    modelId: modelId,
-    outputFormat: outputFormat,
-  });
-
+  const audioBuffer = await elevenlabs.textToSpeech.convert(voiceId, { text: scriptText, voiceId, modelId: modelId, outputFormat: outputFormat });
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-
   const fileExtension = outputFormat.split('_')[0];
   const filename = `${Date.now()}.${fileExtension}`;
 
@@ -146,14 +124,7 @@ export const elevenLabsVoiceOver = async ({
   let createdVoiceEntry;
 
   try {
-    createdVoiceEntry = await VoiceModel.create({
-      createdBy: req.user._id,
-      scriptId,
-      voiceoverActorId,
-      language,
-      accentOrDialect,
-    });
-
+    createdVoiceEntry = await VoiceModel.create({ createdBy: req.user._id, scriptId, voiceoverActorId, language, accentOrDialect });
     if (!createdVoiceEntry) {
       throw new Error("Failed to save the voice entry in the database.");
     }
@@ -161,6 +132,5 @@ export const elevenLabsVoiceOver = async ({
     console.error("Error saving voice to database:", error);
     throw new Error("An error occurred while saving the voice in the database.");
   }
-
   return { voice: createdVoiceEntry, voiceId: voiceId, outputFilePath: outputFilePath };
 };

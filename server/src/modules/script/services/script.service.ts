@@ -15,9 +15,7 @@ export const generateScript4Product = asyncHandler(async (req, res, next) => {
   const type = "advertising"
 
   const scrapedText = await scrapeText(url);
-
   const generatedScript = await generateScriptWithAi(scrapedText, language, accentOrDialect);
-
   const keywordPrompt = `
 The following is a video script:
 
@@ -32,17 +30,10 @@ Task:
   const result = await model.generateContent(keywordPrompt);
   const keyword = result.response.text().trim().replace(/[".]/g, "");
 
-  console.log("Extracted Title:", keyword);
-
-  // Use keyword to fetch related images
-  // await searchImages(keyword);
   await searchImagesByUnsplash(keyword, type)
 
   return successResponse({
-    res,
-    status: 201,
-    message: "Script generated successfully",
-    data: { generatedScript, title: keyword },
+    res, status: 201, message: "Script generated successfully", data: { generatedScript, title: keyword }
   });
 });
 
@@ -50,7 +41,6 @@ export const generateScriptUsingGimini = asyncHandler(async (req, res, next) => 
   const { type, userPrompt, language, accentOrDialect } = req.body;
   // Refined typePrompts for conciseness and video focus
   const typePrompts = {
-    motivational: `Craft a powerful motivational video script designed to inspire immediate action or a significant shift in perspective. The script should focus on one core message, using compelling language to evoke emotion and encourage a positive change. Consider including a clear call to action.`,
     educational: `Develop a concise and clear educational video script that explains a specific topic simply and effectively. The goal is for the viewer to grasp one key takeaway by the end. The script should break down complex information, use relatable examples, and maintain an engaging tone throughout.`,
     tech: `Create a dynamic and easy-to-understand tech video script that simplifies a complex technological concept or product. The script should make the idea easily digestible, intriguing, and relevant to a broad audience. Focus on demonstrating a practical benefit or solving a common problem.`,
     nutrition: `Write an engaging and informative nutrition video script that offers practical advice or debunks a common myth. The script should simplify nutritional information, making it accessible and actionable for viewers. Focus on one clear, actionable tip or insight that promotes healthier eating habits.`,
@@ -84,7 +74,6 @@ Script Requirements:
   });
   const generatedScript = result.response.text().trim();
 
-  // Keyword extraction
   const keywordPrompt = `
 Given the following video script:
 
@@ -101,15 +90,6 @@ Your task:
   });
   const title = keywordResult.response.text().trim();
 
-  console.log("Extracted Title:", title);
-
-  // await searchImages(title);
   await searchImagesByUnsplash(title, type)
-
-  return successResponse({
-    res,
-    status: 200,
-    message: "Script generated and images fetched successfully",
-    data: { generatedScript, title },
-  });
+  return successResponse({ res, status: 200, message: "Script generated and images fetched successfully", data: { generatedScript, title } });
 });

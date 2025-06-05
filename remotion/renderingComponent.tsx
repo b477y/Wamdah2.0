@@ -122,15 +122,12 @@ const createOutlineShadow = (thickness: number, color: string): string => {
 export const RenderingComponent: FunctionComponent<Props> = ({
   words = [],
   fontSize = 80,
-  fontFamily = "Lalezar", // Default to Lalezar as requested
+  fontFamily = "Lalezar",
   textColor = "#000000",
   highlightColor = "#FF9800",
-  // fadeIn = true, // Currently commented out, so keeping as is
-  // fadeDuration = 0.2, // Currently commented out, so keeping as is
   voiceFile,
   aiAvatarFile,
   borderRadius = 6,
-  // debug = false, // Currently commented out, so keeping as is
   type = "advertising",
   assetsPath = "http://localhost:3000/public",
 }) => {
@@ -146,13 +143,9 @@ export const RenderingComponent: FunctionComponent<Props> = ({
 
   const imageDurationInFrames = Math.floor(durationInFrames / backgroundImagePaths.length);
 
-  // Load the selected font
   const fontLoader = loadFont(fontFamily);
-  if (fontLoader) {
-    fontLoader();
-  }
+  if (fontLoader) { fontLoader(); }
 
-  // Construct full URLs for audio and avatar video
   const audioPath = voiceFile
     ? `${assetsPath}/renders/voices/${voiceFile}`
     : null;
@@ -160,7 +153,6 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     ? `${assetsPath}/renders/aiAvatars/${aiAvatarFile}`
     : null;
 
-  // Find the active word based on current time
   const activeWord = useMemo(() => {
     return words.find(
       (wordObj) => currentTime >= wordObj.start && currentTime <= wordObj.end
@@ -171,35 +163,19 @@ export const RenderingComponent: FunctionComponent<Props> = ({
     ? activeWord.punctuated_word || activeWord.word
     : "";
 
-  // Calculate the text-shadow for the outline
-  // Adjust the '2' for outline thickness (e.g., 1 for thin, 3 for thicker)
-  const outlineThickness = 2; // You can make this a prop if you want to control it from outside
-  const outlineColor = 'black'; // You can make this a prop too
+  const outlineThickness = 2;
+  const outlineColor = 'black';
   const outlineShadow = useMemo(() => createOutlineShadow(outlineThickness, outlineColor), [outlineThickness, outlineColor]);
-
-
-  // Handle case where no words are provided
-  if (words.length === 0) {
-    return (
-      <AbsoluteFill style={{
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "white",
-      }}>
-        <span style={{ color: "red", fontSize: 32 }}>No words provided for captioning</span>
-      </AbsoluteFill>
-    );
-  }
 
   return (
     <AbsoluteFill
       style={{
         backgroundColor: "white",
         display: "flex",
-        justifyContent: "flex-end", // align vertically to bottom
-        alignItems: "center",       // horizontally centered
-        paddingBottom: 150,         // adjust the padding as needed
-        overflow: "hidden", // Hide overflow for images
+        justifyContent: "flex-end",
+        alignItems: "center",
+        paddingBottom: 150,
+        overflow: "hidden",
       }}
     >
 
@@ -256,20 +232,19 @@ export const RenderingComponent: FunctionComponent<Props> = ({
           style={{
             fontSize,
             fontFamily,
-            color: highlightColor, // Use highlight color for the active word fill
-            textShadow: outlineShadow, // <--- Apply the dynamically generated text-shadow outline
+            color: highlightColor,
+            textShadow: outlineShadow,
             borderRadius,
             whiteSpace: "nowrap",
             textAlign: isArabicText(displayWord) ? "right" : "left",
             direction: isArabicText(displayWord) ? "rtl" : "ltr",
             position: "relative",
-            zIndex: 2, // Ensure text is above background
+            zIndex: 2,
           }}
         >
           {displayWord}
         </span>
       ) : (
-        // Placeholder to maintain layout consistency even when no word is active
         <span style={{ visibility: "hidden", fontSize: fontSize }}>Placeholder</span>
       )}
 
