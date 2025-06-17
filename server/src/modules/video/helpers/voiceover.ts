@@ -1,6 +1,9 @@
 import asyncHandler from "../../../utils/response/error.response";
 import axios from "axios";
 import { promises as fs } from 'fs';
+import { existsSync } from 'fs';
+import { mkdirSync } from 'fs';
+import { writeFileSync } from 'fs';
 import msgpack5 from "msgpack5";
 import successResponse from "../../../utils/response/success.response";
 import { cloud } from "../../../utils/multer/cloudinary.multer";
@@ -50,13 +53,13 @@ export const createVoiceOver = async ({
 
     const outputDir = path.join(__dirname, "../../../../../public/renders/voices");
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
     }
 
     const filename = `${Date.now()}.${format}`;
     const outputFilePath = path.join(outputDir, filename);
-    fs.writeFileSync(outputFilePath, response.data);
+    writeFileSync(outputFilePath, response.data);
 
     console.log("Voice file path:", outputFilePath);
 
@@ -71,7 +74,6 @@ export const createVoiceOver = async ({
 
     const voice = await VoiceModel.create({
       createdBy: req.user._id,
-      // voiceSource: cloudUploadResult,
       scriptId,
       voiceoverActorId: _id,
       language,

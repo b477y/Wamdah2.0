@@ -5,8 +5,9 @@ const VoiceActorSchema = new mongoose.Schema(
   {
     actorName: { type: String, required: true, unique: true },
     voiceId: { type: String, required: true, unique: true },
+    referenceId: { type: String, required: true, unique: true },
     language: { type: String, enum: Object.keys(Languages) },
-    accentOrDialect: { type: String, enum: Object.keys(AccentsAndDialects) },
+    accentOrDialect: { type: String, lowercase: true, enum: Object.keys(AccentsAndDialects) },
   },
   { timestamps: true }
 );

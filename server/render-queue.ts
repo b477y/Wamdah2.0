@@ -13,6 +13,7 @@ import generateAndUploadThumbnail from "./src/modules/video/helpers/generateAndU
 import { fileURLToPath } from "url";
 
 interface JobData {
+  abb: any;
   fontFamily: any;
   speaker: any;
   req: any;
@@ -96,6 +97,7 @@ export const makeRenderQueue = ({
           speaker: job.data.speaker,
           script: job.data.script,
           timestamp: job.data.timestamp,
+          abb: job.data.abb,
         });
         job.data.words = aiAvatarResponse.wordArray
       }

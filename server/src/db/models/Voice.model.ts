@@ -5,7 +5,7 @@ const VoiceSchema = new mongoose.Schema(
   {
     createdBy: { type: mongoose.Types.ObjectId, ref: "User", required: true },
     scriptId: { type: mongoose.Types.ObjectId, ref: "Script", required: true },
-    voiceoverActorId: { type: mongoose.Types.ObjectId, ref: "Script", required: true },
+    voiceoverActorId: { type: mongoose.Types.ObjectId, ref: "Script", required: false },
     language: { type: String, lowercase: true, enum: Object.keys(Languages) },
     accentOrDialect: { type: String, lowercase: true, enum: Object.keys(AccentsAndDialects) },
   },

@@ -63,7 +63,7 @@ export const renameVideoTitle = asyncHandler(async (req, res, next) => {
 
 export const getUserDashboard = asyncHandler(async (req, res, next) => {
   const { name } = await UserModel.findById(req.user._id).select("name");
-  const videos = await VideoModel.find({ createdBy: req.user._id }).sort({ createdAt: -1 }).limit(3);
+  const videos = await VideoModel.find({ createdBy: req.user._id }).sort({ createdAt: -1 }).limit(9);
   const aiCredits = await UserModel.findById(req.user._id).select("aiCredits");
   const videosCount = await VideoModel.find({ createdBy: req.user._id }).countDocuments();
   successResponse({

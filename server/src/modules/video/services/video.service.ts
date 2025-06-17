@@ -10,6 +10,7 @@ import { makeRenderQueue } from "../../../../render-queue";
 import { getWordTimestampsFromScript, transcribeWithDeepgram } from "../helpers/transcription";
 import ScriptModel from "../../../db/models/Script.model";
 import successResponse from "../../../utils/response/success.response";
+import { AccentsAndDialects } from "../../../utils/enum/enums";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,10 +66,30 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
   });
 
   const scriptId = script._id || "";
+  let voiceResponse;
 
-  const voiceResponse = await elevenLabsVoiceOver({
-    req, scriptText: content, language, accentOrDialect, scriptId
-  });
+  if (
+    accentOrDialect === "egyptian(ms.gehad)" ||
+    accentOrDialect === "egyptian(prof.ghada)"
+  ) {
+    const { referenceId } = await VoiceActorModel.findOne({ language, accentOrDialect });
+    voiceResponse = await createVoiceOver({
+      req,
+      scriptText: content,
+      reference_id: referenceId,
+      scriptId,
+      language,
+      accentOrDialect
+    });
+  } else {
+    voiceResponse = await elevenLabsVoiceOver({
+      req,
+      scriptText: content,
+      language,
+      accentOrDialect,
+      scriptId
+    });
+  }
 
   const voiceId = voiceResponse.voice._id;
 
@@ -107,6 +128,8 @@ export const generateVideo = asyncHandler(async (req, res, next) => {
 
 // AI Spoke person
 export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
+  console.log(req.body);
+
   const startTime = Date.now()
   const { title, generatedScript, customScript, type, language, accentOrDialect, speaker } = req.body;
 
@@ -128,7 +151,7 @@ export const generateAiAvatarVideo = asyncHandler(async (req, res, next) => {
   const aiAvatarVoiceFile = `${speaker}_${timestamp}.mp3`;
   const aiAvatarFile = `${speaker}_${timestamp}.webm`;
 
-  const jobId = queue.createJob({
+  const jobId = await queue.createJob({
     req, title, scriptId: script._id, script: script.content, speaker,
     language, accentOrDialect, timestamp, titleText: req.body.titleText, aiAvatarFile,
     voiceFile: aiAvatarVoiceFile, type, words: ["words"], startTime
@@ -183,7 +206,7 @@ export const generateAdVideo = asyncHandler(async (req, res, next) => {
 
   const jobId = queue.createJob({
     titleText: req.body.titleText, type: "advertising", words: wordArray, voiceFile,
-    title, localFilePath, req, voiceResponse, scriptId, voiceId, startTime, fontFamily
+    title, localFilePath, req, voiceResponse, scriptId, voiceId, startTime, fontFamily, abb
   });
 
   res.status(200).json({ jobId });
